@@ -32,7 +32,7 @@ void GLFWInputBroadcaster::init(GLFWwindow * window)
 
 void GLFWInputBroadcaster::addObserver(GLFWInputObserver * o)
 {
-	if (std::find(m_vpObservers.begin(), m_vpObservers.end(), o) != m_vpObservers.end())
+	if (std::find(m_vpObservers.begin(), m_vpObservers.end(), o) == m_vpObservers.end())
 		m_vpObservers.push_back(o);
 }
 
