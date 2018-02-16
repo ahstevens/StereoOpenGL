@@ -15,7 +15,7 @@
 
 float							g_fEyeSep = 6.3f;
 float							g_fEyeDist = 57.f; // a 1-cm object will subtend 1 degree at a 57-cm viewing distance
-float							g_fDisplayDiag = 13.3f * INTOCM; // physical display diagonal measurement, given in inches, usually
+float							g_fDisplayDiag = 23.6f * INTOCM; // physical display diagonal measurement, given in inches, usually
 float							g_fDisplayDepth = 50.f; // how much real depth the scene should have
 bool							g_bStereo = false;
 
@@ -307,15 +307,15 @@ void Engine::update()
 		glm::vec3 leftEyePos = m_Head.pos - glm::normalize(glm::mat3_cast(m_Head.rot)[0]) * g_fEyeSep * 0.5f;
 		glm::vec3 rightEyePos = m_Head.pos + glm::normalize(glm::mat3_cast(m_Head.rot)[0]) * g_fEyeSep * 0.5f;
 
-		m_sviLeftEyeInfo.view = glm::lookAt(leftEyePos, glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f));
+		m_sviLeftEyeInfo.view = glm::translate(glm::mat4(), glm::vec3(g_fEyeSep * 0.5f, 0.f, -g_fEyeDist));//glm::lookAt(leftEyePos, glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f));
 		m_sviLeftEyeInfo.projection = getViewingFrustum(leftEyePos, glm::vec3(0.f), glm::vec3(0.f, 0.f, 1.f), glm::vec3(0.f, 1.f, 0.f), glm::vec2(width_cm, height_cm));
 
-		m_sviRightEyeInfo.view = glm::lookAt(rightEyePos, glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f));
+		m_sviRightEyeInfo.view = glm::translate(glm::mat4(), glm::vec3(-g_fEyeSep * 0.5f, 0.f, -g_fEyeDist));//glm::lookAt(rightEyePos, glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f));
 		m_sviRightEyeInfo.projection = getViewingFrustum(rightEyePos, glm::vec3(0.f), glm::vec3(0.f, 0.f, 1.f), glm::vec3(0.f, 1.f, 0.f), glm::vec2(width_cm, height_cm));
 	}
 	else
 	{
-		m_sviMonoInfo.view = glm::lookAt(m_Head.pos, glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f));
+		m_sviMonoInfo.view = glm::translate(glm::mat4(), glm::vec3(0.f, 0.f, -g_fEyeDist));//glm::lookAt(m_Head.pos, glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f));
 		m_Head.rot = glm::inverse(m_sviMonoInfo.view);
 		m_sviMonoInfo.projection = getViewingFrustum(m_Head.pos, glm::vec3(0.f), glm::vec3(0.f, 0.f, 1.f), glm::vec3(0.f, 1.f, 0.f), glm::vec2(width_cm, height_cm));
 	}
@@ -324,14 +324,15 @@ void Engine::update()
 void Engine::makeScene()
 {
 	float rotRadius = 0.f;
-	float osc = 0.f;
+	float osc = 1.f;
 	float rate_ms = 2500.f;
 	double ratio = (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - std::chrono::high_resolution_clock::time_point()).count() % static_cast<long long>(rate_ms)) / rate_ms;
 	float angle = 360.f * static_cast<float>(ratio);
 	float x = glm::cos(glm::radians(angle)) * rotRadius;
 	float y = glm::sin(glm::radians(angle)) * rotRadius;
 	float z = osc - (2.f * osc) * glm::cos(glm::radians(angle * 3.f));
-	Renderer::getInstance().drawPrimitive("icosphere", glm::translate(glm::mat4(), glm::vec3(x, y, z)), glm::vec4(1.f, 0.f, 0.f, 1.f), glm::vec4(1.f), 10.f);
+	Renderer::getInstance().drawPrimitive("torus", glm::translate(glm::mat4(), glm::vec3(x, y, z)) * glm::rotate(glm::mat4(), glm::radians(angle), glm::vec3(0.f, 1.f, 0.f)), glm::vec4(1.f, 0.f, 0.f, 1.f), glm::vec4(1.f), 10.f);
+	Renderer::getInstance().drawPrimitive("icosphere", glm::translate(glm::mat4(), glm::vec3(x, y, z)) * glm::scale(glm::mat4(), glm::vec3(0.5f)), glm::vec4(0.f, 1.f, 0.f, 1.f), glm::vec4(1.f), 10.f);
 
 	{
 		std::stringstream ss;
@@ -479,9 +480,6 @@ void Engine::createMonoView()
 
 	m_sviMonoInfo.m_nRenderWidth = m_ivec2MainWindowSize.x;
 	m_sviMonoInfo.m_nRenderHeight = m_ivec2MainWindowSize.y;
-	m_sviMonoInfo.viewTransform = glm::mat4();
-	m_sviMonoInfo.view = glm::mat4();
-	m_sviMonoInfo.projection = getViewingFrustum(m_Head.pos, glm::vec3(0.f), glm::vec3(0.f, 0.f, 1.f), glm::vec3(0.f, 1.f, 0.f), glm::vec2(width_cm, height_cm));
 
 	m_pMonoFramebuffer = new Renderer::FramebufferDesc();
 
@@ -491,35 +489,13 @@ void Engine::createMonoView()
 
 void Engine::createStereoViews()
 {
-	float nearclip = g_fEyeDist - g_fDisplayDepth * 0.5f;
-	float farclip = g_fEyeDist + g_fDisplayDepth * 0.5f;
-
-	float sizer = g_fDisplayDiag / sqrt(m_ivec2MainWindowSize.x * m_ivec2MainWindowSize.x + m_ivec2MainWindowSize.y * m_ivec2MainWindowSize.y);
-
-	float width_cm = m_ivec2MainWindowSize.x * sizer;
-	float height_cm = m_ivec2MainWindowSize.y * sizer;
-
-	float top = nearclip * height_cm / (2.f * g_fEyeDist);
-
-	float leL = -nearclip * (width_cm - g_fEyeSep) / (2.f * g_fEyeDist);
-	float leR = nearclip * (width_cm + g_fEyeSep) / (2.f * g_fEyeDist);
-
-	float reL = -nearclip * (width_cm + g_fEyeSep) / (2.f * g_fEyeDist);
-	float reR = nearclip * (width_cm - g_fEyeSep) / (2.f * g_fEyeDist);
-
 	// LEFT EYE
 	m_sviLeftEyeInfo.m_nRenderWidth = m_ivec2MainWindowSize.x;
 	m_sviLeftEyeInfo.m_nRenderHeight = m_ivec2MainWindowSize.y;
-	m_sviLeftEyeInfo.viewTransform = glm::translate(glm::mat4(), glm::vec3(-g_fEyeSep * 0.5f, 0.f, 0.f));
-	m_sviLeftEyeInfo.view = glm::mat4();
-	m_sviLeftEyeInfo.projection = glm::frustum(leL, leR, -top, top,	nearclip, farclip);
 
 	// RIGHT EYE
 	m_sviRightEyeInfo.m_nRenderWidth = m_ivec2MainWindowSize.x;
 	m_sviRightEyeInfo.m_nRenderHeight = m_ivec2MainWindowSize.y;
-	m_sviRightEyeInfo.viewTransform = glm::translate(glm::mat4(), glm::vec3(g_fEyeSep * 0.5f, 0.f, 0.f));
-	m_sviRightEyeInfo.view = glm::mat4();
-	m_sviRightEyeInfo.projection = glm::frustum(reL, reR, -top, top, nearclip, farclip);
 
 	m_pLeftEyeFramebuffer = new Renderer::FramebufferDesc();
 	m_pRightEyeFramebuffer = new Renderer::FramebufferDesc();
