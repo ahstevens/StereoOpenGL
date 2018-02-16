@@ -14,9 +14,10 @@
 #define INTOCM 2.54f
 
 float							g_fEyeSep = 6.3f;
-float							g_fEyeDist = 35.f; // a 1-cm object will subtend 1 degree at a 57-cm viewing distance
+float							g_fEyeDist = 57.f; // a 1-cm object will subtend 1 degree at a 57-cm viewing distance
 float							g_fDisplayDiag = 13.3f * INTOCM; // physical display diagonal measurement, given in inches, usually
-float							g_fDisplayDepth = 25.f; // how much real depth the scene should have
+float							g_fDisplayDepth = 50.f; // how much real depth the scene should have
+bool							g_bStereo = false;
 
 //-----------------------------------------------------------------------------
 // Purpose: OpenGL Debug Callback Function
@@ -121,7 +122,7 @@ bool Engine::init()
 
 	listDisplayInfo();
 
-	if (!(m_pMainWindow = createWindow(glfwGetPrimaryMonitor(), 0, 0, true)))
+	if (!(m_pMainWindow = createWindow(glfwGetPrimaryMonitor(), 0, 0, g_bStereo)))
 	{
 		dprintf("%s - Window could not be created!\n", __FUNCTION__);
 		return false;
@@ -129,7 +130,7 @@ bool Engine::init()
 	
 	glfwGetWindowSize(m_pMainWindow, &m_ivec2MainWindowSize.x, &m_ivec2MainWindowSize.y);
 	
-	if (!initGL(false))
+	if (!initGL(g_bStereo))
 	{
 		dprintf("%s - Unable to initialize OpenGL!\n", __FUNCTION__);
 		return false;
@@ -148,7 +149,6 @@ bool Engine::init()
 	createUIView();
 	createMonoView();
 	createStereoViews();
-
 	
 	return true;
 }
@@ -247,6 +247,15 @@ void Engine::receive(void * data)
 			std::cout << "\t" << m_msRenderTime.count() << "ms\tRendering" << std::endl;
 		}
 	}
+	if (eventData[0] == GLFWInputBroadcaster::EVENT::KEY_HOLD)
+	{
+		float delta = 0.1f;
+
+		if (eventData[1] == GLFW_KEY_LEFT)
+			m_Head.pos += glm::mat3_cast(m_Head.rot)[0] * delta;
+		if (eventData[1] == GLFW_KEY_RIGHT)
+			m_Head.pos -= glm::mat3_cast(m_Head.rot)[0] * delta;
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -287,36 +296,35 @@ void Engine::RunMainLoop()
 
 void Engine::update()
 {
-	float nearclip = g_fEyeDist - g_fDisplayDepth * 0.5f;
-	float farclip = g_fEyeDist + g_fDisplayDepth * 0.5f;
-
 	float sizer = g_fDisplayDiag / sqrt(m_ivec2MainWindowSize.x * m_ivec2MainWindowSize.x + m_ivec2MainWindowSize.y * m_ivec2MainWindowSize.y);
 
 	float width_cm = m_ivec2MainWindowSize.x * sizer;
 	float height_cm = m_ivec2MainWindowSize.y * sizer;
 
-	float top = nearclip * height_cm / (2.f * g_fEyeDist);
+	if (g_bStereo)
+	{
+		// Update eye positions using current head position
+		glm::vec3 leftEyePos = m_Head.pos - glm::normalize(glm::mat3_cast(m_Head.rot)[0]) * g_fEyeSep * 0.5f;
+		glm::vec3 rightEyePos = m_Head.pos + glm::normalize(glm::mat3_cast(m_Head.rot)[0]) * g_fEyeSep * 0.5f;
 
-	float leL = -nearclip * (width_cm - g_fEyeSep) / (2.f * g_fEyeDist);
-	float leR = nearclip * (width_cm + g_fEyeSep) / (2.f * g_fEyeDist);
+		m_sviLeftEyeInfo.view = glm::lookAt(leftEyePos, glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f));
+		m_sviLeftEyeInfo.projection = getViewingFrustum(leftEyePos, glm::vec3(0.f), glm::vec3(0.f, 0.f, 1.f), glm::vec3(0.f, 1.f, 0.f), glm::vec2(width_cm, height_cm));
 
-	float reL = -nearclip * (width_cm + g_fEyeSep) / (2.f * g_fEyeDist);
-	float reR = nearclip * (width_cm - g_fEyeSep) / (2.f * g_fEyeDist);
-
-	// Update eye positions using current head position
-	glm::vec3 eyeShift(g_fEyeSep * 0.5f, 0.f, 0.f);
-
-	m_sviLeftEyeInfo.view = glm::lookAt(m_Head.pos - eyeShift, -eyeShift, glm::vec3(0.f, 1.f, 0.f));
-	m_sviLeftEyeInfo.projection = glm::frustum(leL, leR, -top, top, nearclip, farclip);
-
-	m_sviRightEyeInfo.view = glm::lookAt(m_Head.pos + eyeShift, eyeShift, glm::vec3(0.f, 1.f, 0.f));
-	m_sviRightEyeInfo.projection = glm::frustum(reL, reR, -top, top, nearclip, farclip);
+		m_sviRightEyeInfo.view = glm::lookAt(rightEyePos, glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f));
+		m_sviRightEyeInfo.projection = getViewingFrustum(rightEyePos, glm::vec3(0.f), glm::vec3(0.f, 0.f, 1.f), glm::vec3(0.f, 1.f, 0.f), glm::vec2(width_cm, height_cm));
+	}
+	else
+	{
+		m_sviMonoInfo.view = glm::lookAt(m_Head.pos, glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f));
+		m_Head.rot = glm::inverse(m_sviMonoInfo.view);
+		m_sviMonoInfo.projection = getViewingFrustum(m_Head.pos, glm::vec3(0.f), glm::vec3(0.f, 0.f, 1.f), glm::vec3(0.f, 1.f, 0.f), glm::vec2(width_cm, height_cm));
+	}
 }
 
 void Engine::makeScene()
 {
-	float rotRadius = 5.f;
-	float osc = 2.f;
+	float rotRadius = 0.f;
+	float osc = 0.f;
 	float rate_ms = 2500.f;
 	double ratio = (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - std::chrono::high_resolution_clock::time_point()).count() % static_cast<long long>(rate_ms)) / rate_ms;
 	float angle = 360.f * static_cast<float>(ratio);
@@ -351,12 +359,17 @@ void Engine::render()
 {
 	Renderer::getInstance().sortTransparentObjects(m_Head.pos);
 
-	//Renderer::getInstance().RenderFrame(&m_sviMonoInfo, &m_sviUIInfo, m_pMonoFramebuffer);
-	Renderer::getInstance().RenderFrame(&m_sviLeftEyeInfo, &m_sviUIInfo, m_pLeftEyeFramebuffer);
-	Renderer::getInstance().RenderFrame(&m_sviRightEyeInfo, &m_sviUIInfo, m_pRightEyeFramebuffer);
-
-	//Renderer::getInstance().RenderFullscreenTexture(m_ivec2MainWindowSize.x, m_ivec2MainWindowSize.y, m_pMonoFramebuffer->m_nResolveTextureId);
-	Renderer::getInstance().RenderStereoTexture(m_ivec2MainWindowSize.x, m_ivec2MainWindowSize.y, m_pLeftEyeFramebuffer->m_nResolveTextureId, m_pRightEyeFramebuffer->m_nResolveTextureId);
+	if (g_bStereo)
+	{
+		Renderer::getInstance().RenderFrame(&m_sviLeftEyeInfo, &m_sviUIInfo, m_pLeftEyeFramebuffer);
+		Renderer::getInstance().RenderFrame(&m_sviRightEyeInfo, &m_sviUIInfo, m_pRightEyeFramebuffer);
+		Renderer::getInstance().RenderStereoTexture(m_ivec2MainWindowSize.x, m_ivec2MainWindowSize.y, m_pLeftEyeFramebuffer->m_nResolveTextureId, m_pRightEyeFramebuffer->m_nResolveTextureId);
+	}
+	else
+	{
+		Renderer::getInstance().RenderFrame(&m_sviMonoInfo, &m_sviUIInfo, m_pMonoFramebuffer);
+		Renderer::getInstance().RenderFullscreenTexture(m_ivec2MainWindowSize.x, m_ivec2MainWindowSize.y, m_pMonoFramebuffer->m_nResolveTextureId);
+	}
 	
 	glfwSwapBuffers(m_pMainWindow);
 	
