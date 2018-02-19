@@ -15,7 +15,7 @@
 
 float							g_fEyeSep = 6.3f;
 float							g_fEyeDist = 57.f; // a 1-cm object will subtend 1 degree at a 57-cm viewing distance
-float							g_fDisplayDiag = 23.6f * INTOCM; // physical display diagonal measurement, given in inches, usually
+float							g_fDisplayDiag = 13.3f * INTOCM; // physical display diagonal measurement, given in inches, usually
 float							g_fDisplayDepth = 50.f; // how much real depth the scene should have
 bool							g_bStereo = false;
 
@@ -307,15 +307,15 @@ void Engine::update()
 		glm::vec3 leftEyePos = m_Head.pos - glm::normalize(glm::mat3_cast(m_Head.rot)[0]) * g_fEyeSep * 0.5f;
 		glm::vec3 rightEyePos = m_Head.pos + glm::normalize(glm::mat3_cast(m_Head.rot)[0]) * g_fEyeSep * 0.5f;
 
-		m_sviLeftEyeInfo.view = glm::translate(glm::mat4(), glm::vec3(g_fEyeSep * 0.5f, 0.f, -g_fEyeDist));//glm::lookAt(leftEyePos, glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f));
+		m_sviLeftEyeInfo.view = glm::translate(glm::mat4(), -leftEyePos);//glm::lookAt(leftEyePos, glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f));
 		m_sviLeftEyeInfo.projection = getViewingFrustum(leftEyePos, glm::vec3(0.f), glm::vec3(0.f, 0.f, 1.f), glm::vec3(0.f, 1.f, 0.f), glm::vec2(width_cm, height_cm));
 
-		m_sviRightEyeInfo.view = glm::translate(glm::mat4(), glm::vec3(-g_fEyeSep * 0.5f, 0.f, -g_fEyeDist));//glm::lookAt(rightEyePos, glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f));
+		m_sviRightEyeInfo.view = glm::translate(glm::mat4(), -rightEyePos);//glm::lookAt(rightEyePos, glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f));
 		m_sviRightEyeInfo.projection = getViewingFrustum(rightEyePos, glm::vec3(0.f), glm::vec3(0.f, 0.f, 1.f), glm::vec3(0.f, 1.f, 0.f), glm::vec2(width_cm, height_cm));
 	}
 	else
 	{
-		m_sviMonoInfo.view = glm::translate(glm::mat4(), glm::vec3(0.f, 0.f, -g_fEyeDist));//glm::lookAt(m_Head.pos, glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f));
+		m_sviMonoInfo.view = glm::translate(glm::mat4(), -m_Head.pos);//glm::lookAt(m_Head.pos, glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f));
 		m_Head.rot = glm::inverse(m_sviMonoInfo.view);
 		m_sviMonoInfo.projection = getViewingFrustum(m_Head.pos, glm::vec3(0.f), glm::vec3(0.f, 0.f, 1.f), glm::vec3(0.f, 1.f, 0.f), glm::vec2(width_cm, height_cm));
 	}
@@ -449,6 +449,7 @@ void Engine::createUIView()
 }
 
 // assumes that the center of the screen is the origin with +Z coming out of the screen
+// all parameters are given in world space coordinates
 glm::mat4 Engine::getViewingFrustum(glm::vec3 eyePos, glm::vec3 screenCenter, glm::vec3 screenNormal, glm::vec3 screenUp, glm::vec2 screenSize)
 {
 	glm::vec3 screenRight = glm::normalize(glm::cross(screenUp, screenNormal));
@@ -463,10 +464,15 @@ glm::mat4 Engine::getViewingFrustum(glm::vec3 eyePos, glm::vec3 screenCenter, gl
 	// use similar triangles to scale to the near plane
 	float nearScale = n / dist;
 
-	l = glm::dot(screenRight, (screenCenter - screenRight * screenSize.x * 0.5f) - eyePos) * nearScale;
-	r = glm::dot(screenRight, (screenCenter + screenRight * screenSize.x * 0.5f) - eyePos) * nearScale;
-	b = glm::dot(screenUp, (screenCenter - screenUp * screenSize.y * 0.5f) - eyePos) * nearScale;
-	t = glm::dot(screenUp, (screenCenter + screenUp * screenSize.y * 0.5f) - eyePos) * nearScale;
+	//l = glm::dot(screenRight, (screenCenter - screenRight * screenSize.x * 0.5f) - eyePos) * nearScale;
+	//r = glm::dot(screenRight, (screenCenter + screenRight * screenSize.x * 0.5f) - eyePos) * nearScale;
+	//b = glm::dot(screenUp, (screenCenter - screenUp * screenSize.y * 0.5f) - eyePos) * nearScale;
+	//t = glm::dot(screenUp, (screenCenter + screenUp * screenSize.y * 0.5f) - eyePos) * nearScale;
+
+	l = ((screenCenter - screenRight * screenSize.x * 0.5f) - eyePos).x * nearScale;
+	r = ((screenCenter + screenRight * screenSize.x * 0.5f) - eyePos).x * nearScale;
+	b = ((screenCenter - screenUp * screenSize.y * 0.5f) - eyePos).y * nearScale;
+	t = ((screenCenter + screenUp * screenSize.y * 0.5f) - eyePos).y * nearScale;
 
 	return glm::frustum(l, r, b, t, n, f);
 }
