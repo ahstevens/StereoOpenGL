@@ -15,9 +15,11 @@
 
 float							g_fEyeSep = 6.3f;
 float							g_fEyeDist = 57.f; // a 1-cm object will subtend 1 degree at a 57-cm viewing distance
-float							g_fDisplayDiag = 13.3f * INTOCM; // physical display diagonal measurement, given in inches, usually
-float							g_fDisplayDepth = 50.f; // how much real depth the scene should have
-bool							g_bStereo = false;
+float							g_fDisplayDiag = 23.6f * INTOCM; // physical display diagonal measurement, given in inches, usually
+float							g_fDisplayDepth = 25.f; // how much real depth the scene should have
+glm::vec3						g_vec3ScreenNormal(0.f, 0.f, 1.f);
+glm::vec3						g_vec3ScreenPos(0.f);
+bool							g_bStereo = true;
 
 //-----------------------------------------------------------------------------
 // Purpose: OpenGL Debug Callback Function
@@ -140,6 +142,9 @@ bool Engine::init()
 
 	GLFWInputBroadcaster::getInstance().addObserver(this);
 
+
+	glfwSetInputMode(m_pMainWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
 	if (!Renderer::getInstance().init())
 		return false;
 
@@ -252,9 +257,13 @@ void Engine::receive(void * data)
 		float delta = 0.1f;
 
 		if (eventData[1] == GLFW_KEY_LEFT)
-			m_Head.pos += glm::mat3_cast(m_Head.rot)[0] * delta;
+			m_Head.pos -= glm::vec3(1.f, 0.f, 0.f) * delta;//glm::mat3_cast(m_Head.rot)[0] * delta;
 		if (eventData[1] == GLFW_KEY_RIGHT)
-			m_Head.pos -= glm::mat3_cast(m_Head.rot)[0] * delta;
+			m_Head.pos += glm::vec3(1.f, 0.f, 0.f) * delta;//glm::mat3_cast(m_Head.rot)[0] * delta;
+		if (eventData[1] == GLFW_KEY_UP)
+		m_Head.pos += glm::vec3(0.f, 1.f, 0.f) * delta;//glm::mat3_cast(m_Head.rot)[0] * delta;
+		if (eventData[1] == GLFW_KEY_DOWN)
+			m_Head.pos -= glm::vec3(0.f, 1.f, 0.f) * delta;//glm::mat3_cast(m_Head.rot)[0] * delta;
 	}
 }
 
@@ -307,10 +316,10 @@ void Engine::update()
 		glm::vec3 leftEyePos = m_Head.pos - glm::normalize(glm::mat3_cast(m_Head.rot)[0]) * g_fEyeSep * 0.5f;
 		glm::vec3 rightEyePos = m_Head.pos + glm::normalize(glm::mat3_cast(m_Head.rot)[0]) * g_fEyeSep * 0.5f;
 
-		m_sviLeftEyeInfo.view = glm::translate(glm::mat4(), -leftEyePos);//glm::lookAt(leftEyePos, glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f));
+		m_sviLeftEyeInfo.view = glm::translate(glm::mat4(), -leftEyePos - glm::vec3(0.f, 0.f, 1.f) * g_fDisplayDepth * 0.5f);
 		m_sviLeftEyeInfo.projection = getViewingFrustum(leftEyePos, glm::vec3(0.f), glm::vec3(0.f, 0.f, 1.f), glm::vec3(0.f, 1.f, 0.f), glm::vec2(width_cm, height_cm));
 
-		m_sviRightEyeInfo.view = glm::translate(glm::mat4(), -rightEyePos);//glm::lookAt(rightEyePos, glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f));
+		m_sviRightEyeInfo.view = glm::translate(glm::mat4(), -rightEyePos - glm::vec3(0.f, 0.f, 1.f) * g_fDisplayDepth * 0.5f);
 		m_sviRightEyeInfo.projection = getViewingFrustum(rightEyePos, glm::vec3(0.f), glm::vec3(0.f, 0.f, 1.f), glm::vec3(0.f, 1.f, 0.f), glm::vec2(width_cm, height_cm));
 	}
 	else
