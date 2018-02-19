@@ -14,11 +14,12 @@
 #define INTOCM 2.54f
 
 float							g_fEyeSep = 6.3f;
-float							g_fEyeDist = 57.f; // a 1-cm object will subtend 1 degree at a 57-cm viewing distance
+float							g_fEyeDist = 35.f; // a 1-cm object will subtend 1 degree at a 57-cm viewing distance
 float							g_fDisplayDiag = 23.6f * INTOCM; // physical display diagonal measurement, given in inches, usually
-float							g_fDisplayDepth = 25.f; // how much real depth the scene should have
-glm::vec3						g_vec3ScreenNormal(0.f, 0.f, 1.f);
+float							g_fDisplayDepth = 10.f; // how much real depth the scene should have
 glm::vec3						g_vec3ScreenPos(0.f);
+glm::vec3						g_vec3ScreenNormal(0.f, 0.f, 1.f);
+glm::vec3						g_vec3ScreenUp(0.f, 1.f, 0.f);
 bool							g_bStereo = true;
 
 //-----------------------------------------------------------------------------
@@ -316,23 +317,23 @@ void Engine::update()
 		glm::vec3 leftEyePos = m_Head.pos - glm::normalize(glm::mat3_cast(m_Head.rot)[0]) * g_fEyeSep * 0.5f;
 		glm::vec3 rightEyePos = m_Head.pos + glm::normalize(glm::mat3_cast(m_Head.rot)[0]) * g_fEyeSep * 0.5f;
 
-		m_sviLeftEyeInfo.view = glm::translate(glm::mat4(), -leftEyePos - glm::vec3(0.f, 0.f, 1.f) * g_fDisplayDepth * 0.5f);
-		m_sviLeftEyeInfo.projection = getViewingFrustum(leftEyePos, glm::vec3(0.f), glm::vec3(0.f, 0.f, 1.f), glm::vec3(0.f, 1.f, 0.f), glm::vec2(width_cm, height_cm));
+		m_sviLeftEyeInfo.view = glm::translate(glm::mat4(), -leftEyePos - (g_vec3ScreenPos + g_vec3ScreenNormal * g_fDisplayDepth * 0.5f));
+		m_sviLeftEyeInfo.projection = getViewingFrustum(leftEyePos, g_vec3ScreenPos, g_vec3ScreenNormal, g_vec3ScreenUp, glm::vec2(width_cm, height_cm));
 
-		m_sviRightEyeInfo.view = glm::translate(glm::mat4(), -rightEyePos - glm::vec3(0.f, 0.f, 1.f) * g_fDisplayDepth * 0.5f);
-		m_sviRightEyeInfo.projection = getViewingFrustum(rightEyePos, glm::vec3(0.f), glm::vec3(0.f, 0.f, 1.f), glm::vec3(0.f, 1.f, 0.f), glm::vec2(width_cm, height_cm));
+		m_sviRightEyeInfo.view = glm::translate(glm::mat4(), -rightEyePos - (g_vec3ScreenPos + g_vec3ScreenNormal * g_fDisplayDepth * 0.5f));
+		m_sviRightEyeInfo.projection = getViewingFrustum(rightEyePos, g_vec3ScreenPos, g_vec3ScreenNormal, g_vec3ScreenUp, glm::vec2(width_cm, height_cm));
 	}
 	else
 	{
-		m_sviMonoInfo.view = glm::translate(glm::mat4(), -m_Head.pos);//glm::lookAt(m_Head.pos, glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f));
+		m_sviMonoInfo.view = glm::translate(glm::mat4(), -m_Head.pos - (g_vec3ScreenPos + g_vec3ScreenNormal * g_fDisplayDepth * 0.5f));
 		m_Head.rot = glm::inverse(m_sviMonoInfo.view);
-		m_sviMonoInfo.projection = getViewingFrustum(m_Head.pos, glm::vec3(0.f), glm::vec3(0.f, 0.f, 1.f), glm::vec3(0.f, 1.f, 0.f), glm::vec2(width_cm, height_cm));
+		m_sviMonoInfo.projection = getViewingFrustum(m_Head.pos, g_vec3ScreenPos, g_vec3ScreenNormal, g_vec3ScreenUp, glm::vec2(width_cm, height_cm));
 	}
 }
 
 void Engine::makeScene()
 {
-	float rotRadius = 0.f;
+	float rotRadius = 1.f;
 	float osc = 1.f;
 	float rate_ms = 2500.f;
 	double ratio = (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - std::chrono::high_resolution_clock::time_point()).count() % static_cast<long long>(rate_ms)) / rate_ms;
@@ -342,6 +343,8 @@ void Engine::makeScene()
 	float z = osc - (2.f * osc) * glm::cos(glm::radians(angle * 3.f));
 	Renderer::getInstance().drawPrimitive("torus", glm::translate(glm::mat4(), glm::vec3(x, y, z)) * glm::rotate(glm::mat4(), glm::radians(angle), glm::vec3(0.f, 1.f, 0.f)), glm::vec4(1.f, 0.f, 0.f, 1.f), glm::vec4(1.f), 10.f);
 	Renderer::getInstance().drawPrimitive("icosphere", glm::translate(glm::mat4(), glm::vec3(x, y, z)) * glm::scale(glm::mat4(), glm::vec3(0.5f)), glm::vec4(0.f, 1.f, 0.f, 1.f), glm::vec4(1.f), 10.f);
+
+	//Renderer::getInstance().drawPrimitive("bbox", glm::translate(glm::mat4(), -m_Head.pos - (g_vec3ScreenPos + g_vec3ScreenNormal * g_fDisplayDepth * 0.5f)) * glm::scale(glm::mat4(), glm::vec3(0.001f)), glm::vec4(1.f), glm::vec4(1.f), 10.f);
 
 	{
 		std::stringstream ss;
