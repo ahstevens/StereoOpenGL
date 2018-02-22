@@ -37,6 +37,7 @@ private:
 
 	void update();
 	void makeScene();
+	void makeDiagram();
 	void render();
 
 	void receive(void* data);
