@@ -14,11 +14,11 @@
 #define INTOCM 2.54f
 
 float							g_fEyeSep = 6.3f;
-float							g_fDisplayDiag = 13.3f * INTOCM; // physical display diagonal measurement, given in inches, usually
+float							g_fDisplayDiag = 23.6f * INTOCM; // physical display diagonal measurement, given in inches, usually
 glm::vec3						g_vec3ScreenPos(0.f, 0.f, 10.f);
 glm::vec3						g_vec3ScreenNormal(0.f, 0.f, 1.f);
 glm::vec3						g_vec3ScreenUp(0.f, 1.f, 0.f);
-bool							g_bStereo = false;
+bool							g_bStereo = true;
 
 //-----------------------------------------------------------------------------
 // Purpose: OpenGL Debug Callback Function
@@ -339,10 +339,10 @@ void Engine::makeScene()
 	float x = glm::cos(glm::radians(angle)) * rotRadius;
 	float y = glm::sin(glm::radians(angle)) * rotRadius;
 	float z = osc - (2.f * osc) * glm::cos(glm::radians(angle * 3.f));
-	Renderer::getInstance().drawPrimitive("torus", glm::translate(glm::mat4(), glm::vec3(x, y, z)) * glm::rotate(glm::mat4(), glm::radians(angle), glm::vec3(0.f, 1.f, 0.f)), glm::vec4(1.f, 0.f, 0.f, 1.f), glm::vec4(1.f), 10.f);
-	Renderer::getInstance().drawPrimitive("icosphere", glm::translate(glm::mat4(), glm::vec3(x, y, z)) * glm::scale(glm::mat4(), glm::vec3(0.5f)), glm::vec4(0.f, 1.f, 0.f, 1.f), glm::vec4(1.f), 10.f);
+	//Renderer::getInstance().drawPrimitive("torus", glm::translate(glm::mat4(), glm::vec3(x, y, z)) * glm::rotate(glm::mat4(), glm::radians(angle), glm::vec3(0.f, 1.f, 0.f)), glm::vec4(1.f, 0.f, 0.f, 1.f), glm::vec4(1.f), 10.f);
+	//Renderer::getInstance().drawPrimitive("icosphere", glm::translate(glm::mat4(), glm::vec3(x, y, z)) * glm::scale(glm::mat4(), glm::vec3(0.5f)), glm::vec4(0.f, 1.f, 0.f, 1.f), glm::vec4(1.f), 10.f);
 
-	//makeDiagram();
+	makeDiagram();
 	//Renderer::getInstance().drawPrimitive("bbox", glm::translate(glm::mat4(), -m_Head.pos - (g_vec3ScreenPos + g_vec3ScreenNormal * g_fDisplayDepth * 0.5f)) * glm::scale(glm::mat4(), glm::vec3(0.001f)), glm::vec4(1.f), glm::vec4(1.f), 10.f);
 
 	{
@@ -386,7 +386,7 @@ void Engine::makeDiagram()
 		glm::vec4(origin, 1.f));
 
 	DebugDrawer::getInstance().setTransform(trans);
-	//DebugDrawer::getInstance().drawTransform(1.f);
+	DebugDrawer::getInstance().drawTransform(1.f);
 	DebugDrawer::getInstance().drawArc(rad, rad, 180.f, 360.f, glm::vec4(0.f, 1.f, 1.f, 1.f), false);
 	DebugDrawer::getInstance().drawLine(glm::vec3(rad, 0.f, 0.f), glm::vec3(-rad, 0.f, 0.f));
 	DebugDrawer::getInstance().setTransform(glm::translate(trans, glm::vec3(0.f, -rad, 0.f)));

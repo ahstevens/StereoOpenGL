@@ -172,6 +172,7 @@
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="shaderset.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="UntrackedStereoDiagram.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\shared\lodepng.h" />
@@ -184,6 +185,7 @@
     <ClInclude Include="LightingSystem.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="shaderset.h" />
+    <ClInclude Include="UntrackedStereoDiagram.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\windowtexture.frag" />

@@ -51,6 +51,9 @@
     <ClCompile Include="GLFWInputBroadcaster.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="UntrackedStereoDiagram.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\shared\lodepng.h">
@@ -81,6 +84,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GLFWInputBroadcaster.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UntrackedStereoDiagram.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
