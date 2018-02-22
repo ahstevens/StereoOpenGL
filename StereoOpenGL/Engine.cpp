@@ -14,13 +14,11 @@
 #define INTOCM 2.54f
 
 float							g_fEyeSep = 6.3f;
-float							g_fEyeDist = 35.f; // a 1-cm object will subtend 1 degree at a 57-cm viewing distance
-float							g_fDisplayDiag = 23.6f * INTOCM; // physical display diagonal measurement, given in inches, usually
-float							g_fDisplayDepth = 10.f; // how much real depth the scene should have
-glm::vec3						g_vec3ScreenPos(0.f);
+float							g_fDisplayDiag = 13.3f * INTOCM; // physical display diagonal measurement, given in inches, usually
+glm::vec3						g_vec3ScreenPos(0.f, 0.f, 10.f);
 glm::vec3						g_vec3ScreenNormal(0.f, 0.f, 1.f);
 glm::vec3						g_vec3ScreenUp(0.f, 1.f, 0.f);
-bool							g_bStereo = true;
+bool							g_bStereo = false;
 
 //-----------------------------------------------------------------------------
 // Purpose: OpenGL Debug Callback Function
@@ -149,7 +147,7 @@ bool Engine::init()
 	if (!Renderer::getInstance().init())
 		return false;
 
-	m_Head.pos = glm::vec3(0.f, 0.f, g_fEyeDist);
+	m_Head.pos = glm::vec3(0.f, 0.f, 67.f);
 	m_Head.rot = glm::quat(glm::inverse(glm::lookAt(m_Head.pos, glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f))));
 
 	createUIView();
@@ -258,13 +256,13 @@ void Engine::receive(void * data)
 		float delta = 0.1f;
 
 		if (eventData[1] == GLFW_KEY_LEFT)
-			m_Head.pos -= glm::vec3(1.f, 0.f, 0.f) * delta;//glm::mat3_cast(m_Head.rot)[0] * delta;
+			m_Head.pos -= glm::vec3(1.f, 0.f, 0.f) * delta;
 		if (eventData[1] == GLFW_KEY_RIGHT)
-			m_Head.pos += glm::vec3(1.f, 0.f, 0.f) * delta;//glm::mat3_cast(m_Head.rot)[0] * delta;
+			m_Head.pos += glm::vec3(1.f, 0.f, 0.f) * delta;
 		if (eventData[1] == GLFW_KEY_UP)
-		m_Head.pos += glm::vec3(0.f, 1.f, 0.f) * delta;//glm::mat3_cast(m_Head.rot)[0] * delta;
+		m_Head.pos += glm::vec3(0.f, 1.f, 0.f) * delta;
 		if (eventData[1] == GLFW_KEY_DOWN)
-			m_Head.pos -= glm::vec3(0.f, 1.f, 0.f) * delta;//glm::mat3_cast(m_Head.rot)[0] * delta;
+			m_Head.pos -= glm::vec3(0.f, 1.f, 0.f) * delta;
 	}
 }
 
@@ -317,15 +315,15 @@ void Engine::update()
 		glm::vec3 leftEyePos = m_Head.pos - glm::normalize(glm::mat3_cast(m_Head.rot)[0]) * g_fEyeSep * 0.5f;
 		glm::vec3 rightEyePos = m_Head.pos + glm::normalize(glm::mat3_cast(m_Head.rot)[0]) * g_fEyeSep * 0.5f;
 
-		m_sviLeftEyeInfo.view = glm::translate(glm::mat4(), -leftEyePos - (g_vec3ScreenPos + g_vec3ScreenNormal * g_fDisplayDepth * 0.5f));
+		m_sviLeftEyeInfo.view = glm::translate(glm::mat4(), -leftEyePos);
 		m_sviLeftEyeInfo.projection = getViewingFrustum(leftEyePos, g_vec3ScreenPos, g_vec3ScreenNormal, g_vec3ScreenUp, glm::vec2(width_cm, height_cm));
 
-		m_sviRightEyeInfo.view = glm::translate(glm::mat4(), -rightEyePos - (g_vec3ScreenPos + g_vec3ScreenNormal * g_fDisplayDepth * 0.5f));
+		m_sviRightEyeInfo.view = glm::translate(glm::mat4(), -rightEyePos);
 		m_sviRightEyeInfo.projection = getViewingFrustum(rightEyePos, g_vec3ScreenPos, g_vec3ScreenNormal, g_vec3ScreenUp, glm::vec2(width_cm, height_cm));
 	}
 	else
 	{
-		m_sviMonoInfo.view = glm::translate(glm::mat4(), -m_Head.pos - (g_vec3ScreenPos + g_vec3ScreenNormal * g_fDisplayDepth * 0.5f));
+		m_sviMonoInfo.view = glm::translate(glm::mat4(), -m_Head.pos);
 		m_Head.rot = glm::inverse(m_sviMonoInfo.view);
 		m_sviMonoInfo.projection = getViewingFrustum(m_Head.pos, g_vec3ScreenPos, g_vec3ScreenNormal, g_vec3ScreenUp, glm::vec2(width_cm, height_cm));
 	}
@@ -333,8 +331,8 @@ void Engine::update()
 
 void Engine::makeScene()
 {
-	float rotRadius = 1.f;
-	float osc = 1.f;
+	float rotRadius = 0.f;
+	float osc = 0.f;
 	float rate_ms = 2500.f;
 	double ratio = (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - std::chrono::high_resolution_clock::time_point()).count() % static_cast<long long>(rate_ms)) / rate_ms;
 	float angle = 360.f * static_cast<float>(ratio);
@@ -471,15 +469,10 @@ glm::mat4 Engine::getViewingFrustum(glm::vec3 eyePos, glm::vec3 screenCenter, gl
 	float l, r, t, b, n, f;
 
 	n = 1.f;
-	f = dist + g_fDisplayDepth;
+	f = dist + 100.f;
 
 	// use similar triangles to scale to the near plane
 	float nearScale = n / dist;
-
-	//l = glm::dot(screenRight, (screenCenter - screenRight * screenSize.x * 0.5f) - eyePos) * nearScale;
-	//r = glm::dot(screenRight, (screenCenter + screenRight * screenSize.x * 0.5f) - eyePos) * nearScale;
-	//b = glm::dot(screenUp, (screenCenter - screenUp * screenSize.y * 0.5f) - eyePos) * nearScale;
-	//t = glm::dot(screenUp, (screenCenter + screenUp * screenSize.y * 0.5f) - eyePos) * nearScale;
 
 	l = ((screenCenter - screenRight * screenSize.x * 0.5f) - eyePos).x * nearScale;
 	r = ((screenCenter + screenRight * screenSize.x * 0.5f) - eyePos).x * nearScale;
