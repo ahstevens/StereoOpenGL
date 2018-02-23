@@ -1,5 +1,6 @@
 #include "Engine.h"
 #include "DebugDrawer.h"
+#include "UntrackedStereoDiagram.h"
 
 #include <fstream>
 #include <sstream>
@@ -13,12 +14,14 @@
 
 #define INTOCM 2.54f
 
+UntrackedStereoDiagram*			g_pDiagram;
+
 float							g_fEyeSep = 6.3f;
-float							g_fDisplayDiag = 23.6f * INTOCM; // physical display diagonal measurement, given in inches, usually
+float							g_fDisplayDiag = 13.3f * INTOCM; // physical display diagonal measurement, given in inches, usually
 glm::vec3						g_vec3ScreenPos(0.f, 0.f, 10.f);
 glm::vec3						g_vec3ScreenNormal(0.f, 0.f, 1.f);
 glm::vec3						g_vec3ScreenUp(0.f, 1.f, 0.f);
-bool							g_bStereo = true;
+bool							g_bStereo = false;
 
 //-----------------------------------------------------------------------------
 // Purpose: OpenGL Debug Callback Function
@@ -149,6 +152,19 @@ bool Engine::init()
 
 	m_Head.pos = glm::vec3(0.f, 0.f, 67.f);
 	m_Head.rot = glm::quat(glm::inverse(glm::lookAt(m_Head.pos, glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f))));
+
+	float sizer = g_fDisplayDiag / sqrt(glm::dot(glm::vec2(m_ivec2MainWindowSize), glm::vec2(m_ivec2MainWindowSize)));
+
+	glm::vec2 screenSize_cm = glm::vec2(m_ivec2MainWindowSize) * sizer;
+	
+	glm::mat4 screenTrans(
+		glm::vec4(glm::normalize(glm::cross(g_vec3ScreenUp, g_vec3ScreenNormal)) * screenSize_cm.x * 0.5f, 0.f),
+		glm::vec4(g_vec3ScreenUp * screenSize_cm.y * 0.5f, 0.f),
+		glm::vec4(g_vec3ScreenNormal, 0.f),
+		glm::vec4(g_vec3ScreenPos, 1.f)
+	);
+
+	g_pDiagram = new UntrackedStereoDiagram(screenTrans, m_ivec2MainWindowSize);
 
 	createUIView();
 	createMonoView();
@@ -342,7 +358,8 @@ void Engine::makeScene()
 	//Renderer::getInstance().drawPrimitive("torus", glm::translate(glm::mat4(), glm::vec3(x, y, z)) * glm::rotate(glm::mat4(), glm::radians(angle), glm::vec3(0.f, 1.f, 0.f)), glm::vec4(1.f, 0.f, 0.f, 1.f), glm::vec4(1.f), 10.f);
 	//Renderer::getInstance().drawPrimitive("icosphere", glm::translate(glm::mat4(), glm::vec3(x, y, z)) * glm::scale(glm::mat4(), glm::vec3(0.5f)), glm::vec4(0.f, 1.f, 0.f, 1.f), glm::vec4(1.f), 10.f);
 
-	makeDiagram();
+	g_pDiagram->draw();
+
 	//Renderer::getInstance().drawPrimitive("bbox", glm::translate(glm::mat4(), -m_Head.pos - (g_vec3ScreenPos + g_vec3ScreenNormal * g_fDisplayDepth * 0.5f)) * glm::scale(glm::mat4(), glm::vec3(0.001f)), glm::vec4(1.f), glm::vec4(1.f), 10.f);
 
 	{
@@ -365,32 +382,6 @@ void Engine::makeScene()
 
 	// MUST be run last to xfer previous debug draw calls to opengl buffers
 	DebugDrawer::getInstance().draw();
-}
-
-void Engine::makeDiagram()
-{
-	float sizer = g_fDisplayDiag / sqrt(m_ivec2MainWindowSize.x * m_ivec2MainWindowSize.x + m_ivec2MainWindowSize.y * m_ivec2MainWindowSize.y);
-
-	float width_cm = m_ivec2MainWindowSize.x * sizer;
-	float height_cm = m_ivec2MainWindowSize.y * sizer;
-
-	float rad = height_cm / 3.f;
-	float eyerad = height_cm / 30.f;
-
-	glm::vec3 origin = g_vec3ScreenPos;
-	glm::mat3 rot = glm::mat3(glm::normalize(glm::cross(g_vec3ScreenUp, g_vec3ScreenNormal)), g_vec3ScreenUp, g_vec3ScreenNormal);
-
-	glm::mat4 trans(glm::vec4(rot[0], 0.f),
-		glm::vec4(rot[1], 0.f),
-		glm::vec4(rot[2], 0.f),
-		glm::vec4(origin, 1.f));
-
-	DebugDrawer::getInstance().setTransform(trans);
-	DebugDrawer::getInstance().drawTransform(1.f);
-	DebugDrawer::getInstance().drawArc(rad, rad, 180.f, 360.f, glm::vec4(0.f, 1.f, 1.f, 1.f), false);
-	DebugDrawer::getInstance().drawLine(glm::vec3(rad, 0.f, 0.f), glm::vec3(-rad, 0.f, 0.f));
-	DebugDrawer::getInstance().setTransform(glm::translate(trans, glm::vec3(0.f, -rad, 0.f)));
-	DebugDrawer::getInstance().drawArc(eyerad, eyerad, 0.f, 360.f, glm::vec4(1.f, 1.f, 0.f, 1.f), false);
 }
 
 void Engine::render()
