@@ -9,6 +9,11 @@ minRange = 68
 maxRange = 245
 servoAngularRange = 160 # degrees
 
+def get_ip_address():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("8.8.8.8", 80))
+    return s.getsockname()[0]
+
 stepSize = float(maxRange - minRange) / servoAngularRange
 
 # use 'GPIO naming'
@@ -33,14 +38,16 @@ for pulse in range(maxRange, minRange, -1):
     wiringpi.pwmWrite(18, pulse)
     time.sleep(delay_period)
 
+ip_addr = get_ip_address()
+
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.bind(('', TCP_PORT))
 sock.listen(1)
 
-print("Starting server on port", TCP_PORT) 
+print("Starting server on host", ip_addr, "port", TCP_PORT) 
 
 while True:
-    print("Waiting for connection on port", TCP_PORT)
+    print("Listening on ", ip_addr, ":", TCP_PORT, sep="")
     (clientsocket, address) = sock.accept()
 
     try:
