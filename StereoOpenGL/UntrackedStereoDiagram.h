@@ -13,18 +13,26 @@ public:
 
 	float getViewAngle();
 	void setViewAngle(float angle);
+	float getProjectionAngle();
+	void setProjectionAngle(float angle);
+	float getEyeSeparation();
+	void setEyeSeparation(float dist);
 
 private:
 	void drawOBJ(std::vector<glm::vec3> obj, glm::vec4 col);
-	void drawEye(glm::vec3 eyePos, glm::vec4 eyeCol, std::vector<glm::vec3> obj, glm::vec4 objCol, glm::vec4 rayCol);
+	void drawEye(glm::vec3 eyePos, glm::vec4 eyeCol, glm::vec4 rayCol, std::vector<glm::vec3> obj);
 
 	std::vector<glm::vec3> getHinge();
 
 	void drawHingeAngle(std::vector<glm::vec3> pts, glm::vec4 col);
 
-	std::vector<glm::vec3> transformMonoscopicPoints(glm::vec3 centerOfProj, std::vector<glm::vec3> obj, glm::vec3 viewPos);
+	std::vector<glm::vec3> transformMonoscopicPoints(glm::vec3 centerOfProj, glm::vec3 viewPos, std::vector<glm::vec3> obj);
+	std::vector<glm::vec3> transformStereoscopicPoints(glm::vec3 centerOfProjA, glm::vec3 centerOfProjB, glm::vec3 viewPosA, glm::vec3 viewPosB, std::vector<glm::vec3> obj);
+
 
 	std::vector<glm::vec3> getScreenIntersections(glm::vec3 centerOfProjection, std::vector<glm::vec3> pts);
+	bool LineLineIntersect(glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, glm::vec3 p4, glm::vec3 * pa, glm::vec3 * pb, double * mua, double * mub);
+
 private:	
 	glm::mat4 m_mat4ScreenBasis; // non-normalized
 	glm::mat4 m_mat4ScreenBasisOrtho; // orthonormal

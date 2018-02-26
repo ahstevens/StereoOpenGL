@@ -43,9 +43,13 @@ void UntrackedStereoDiagram::draw()
 	// Viewing Arc
 	DebugDrawer::getInstance().drawArc(m_fViewingArcRadius, m_fViewingArcRadius, 180.f, 360.f, glm::vec4(0.f, 1.f, 1.f, 1.f), false);
 
+	float offsetAngle = glm::degrees(glm::asin(m_fEyeSeparation / (2.f * m_fViewingArcRadius)));
+
 	// Center of Projection
-	glm::mat4 copBasis = glm::rotate(glm::translate(m_mat4ScreenBasisOrtho, glm::vec3(0.f, -m_fViewingArcRadius, 0.f)), glm::radians(m_fProjectionAngle), glm::vec3(m_mat4ScreenBasisOrtho[2]));
+	glm::mat4 copBasis = glm::rotate(glm::mat4(), glm::radians(m_fProjectionAngle), glm::vec3(m_mat4ScreenBasisOrtho[2])) * glm::translate(m_mat4ScreenBasisOrtho, glm::vec3(0.f, -m_fViewingArcRadius, 0.f));
 	glm::vec3 copPos(copBasis[3]);
+	glm::vec3 copLeft = (glm::rotate(glm::mat4(), glm::radians(m_fProjectionAngle - offsetAngle), glm::vec3(m_mat4ScreenBasisOrtho[2])) * glm::translate(m_mat4ScreenBasisOrtho, glm::vec3(0.f, -m_fViewingArcRadius, 0.f)))[3];
+	glm::vec3 copRight = (glm::rotate(glm::mat4(), glm::radians(m_fProjectionAngle + offsetAngle), glm::vec3(m_mat4ScreenBasisOrtho[2])) * glm::translate(m_mat4ScreenBasisOrtho, glm::vec3(0.f, -m_fViewingArcRadius, 0.f)))[3];
 
 	glm::mat4 viewBasis = glm::rotate(glm::mat4(), glm::radians(m_fViewingAngle), glm::vec3(m_mat4ScreenBasisOrtho[2])) * glm::translate(m_mat4ScreenBasisOrtho, glm::vec3(0.f, -m_fViewingArcRadius, 0.f));
 	glm::vec3 viewPos(viewBasis[3]);
@@ -54,25 +58,57 @@ void UntrackedStereoDiagram::draw()
 
 	glm::vec3 screenViewVecPerp = glm::cross(glm::vec3(m_mat4ScreenBasisOrtho[2]), glm::normalize(screenViewVec));
 
-	glm::vec3 leftEyePos = viewPos + screenViewVecPerp * m_fEyeSeparation / 2.f;
-	glm::vec3 rightEyePos = viewPos - screenViewVecPerp * m_fEyeSeparation / 2.f;
+
+	glm::vec3 leftEyePos = (glm::rotate(glm::mat4(), glm::radians(m_fViewingAngle - offsetAngle), glm::vec3(m_mat4ScreenBasisOrtho[2])) * glm::translate(m_mat4ScreenBasisOrtho, glm::vec3(0.f, -m_fViewingArcRadius, 0.f)))[3];
+	glm::vec3 rightEyePos = (glm::rotate(glm::mat4(), glm::radians(m_fViewingAngle + offsetAngle), glm::vec3(m_mat4ScreenBasisOrtho[2])) * glm::translate(m_mat4ScreenBasisOrtho, glm::vec3(0.f, -m_fViewingArcRadius, 0.f)))[3];
 
 	// Hinge
 	auto hingePts = getHinge();
 
-	drawEye(copPos, glm::vec4(1.f, 1.f, 0.f, 1.f), hingePts, glm::vec4(1.f), glm::vec4(1.f, 1.f, 1.f, 0.8f));
-
-	drawEye(leftEyePos, glm::vec4(1.f, 0.f, 0.f, 1.f), transformMonoscopicPoints(copPos, hingePts, viewPos), glm::vec4(1.f), glm::vec4(1.f, 0.f, 0.f, 1.f));
-	drawEye(rightEyePos, glm::vec4(0.f, 1.f, 0.f, 1.f), transformMonoscopicPoints(copPos, hingePts, viewPos), glm::vec4(1.f), glm::vec4(0.f, 1.f, 0.f, 1.f));
-
-	drawHingeAngle(hingePts, glm::vec4(1.f));
-	drawHingeAngle(transformMonoscopicPoints(copPos, hingePts, viewPos), glm::vec4(1.f));
-
-	// Calc intersection points
-	for (auto i : getScreenIntersections(copPos, hingePts))
+	if (true)
 	{
-		DebugDrawer::getInstance().setTransform(glm::translate(glm::mat4(), i));
-		DebugDrawer::getInstance().drawArc(0.1f, 0.1f, 0.f, 360.f, glm::vec4(1.f, 0.f, 1.f, 1.f), false);
+		drawEye(copPos, glm::vec4(1.f, 1.f, 1.f, 0.5f), glm::vec4(1.f, 1.f, 1.f, 0.8f), hingePts);
+		drawOBJ(hingePts, glm::vec4(1.f));
+		drawHingeAngle(hingePts, glm::vec4(1.f));
+
+		auto xformed = transformMonoscopicPoints(copPos, viewPos, hingePts);
+		drawEye(leftEyePos, glm::vec4(1.f, 0.f, 0.f, 0.5f), glm::vec4(1.f, 0.f, 0.f, 1.f), xformed);
+		drawEye(rightEyePos, glm::vec4(0.f, 1.f, 0.f, 0.5f), glm::vec4(0.f, 1.f, 0.f, 1.f), xformed);
+		drawOBJ(xformed, glm::vec4(0.8f));
+		drawHingeAngle(xformed, glm::vec4(1.f));
+
+		// Calc intersection points
+		for (auto i : getScreenIntersections(copPos, hingePts))
+		{
+			DebugDrawer::getInstance().setTransform(glm::translate(glm::mat4(), i));
+			DebugDrawer::getInstance().drawArc(0.1f, 0.1f, 0.f, 360.f, glm::vec4(1.f, 0.f, 1.f, 1.f), false);
+		}
+	}
+	else
+	{
+		drawEye(copLeft, glm::vec4(1.f, 1.f, 1.f, 0.5f), glm::vec4(0.5f, 0.f, 0.f, 0.5f), hingePts);
+		drawEye(copRight, glm::vec4(1.f, 1.f, 1.f, 0.5f), glm::vec4(0.f, 0.5f, 0.f, 0.5f), hingePts);
+		drawOBJ(hingePts, glm::vec4(1.f));
+		drawHingeAngle(hingePts, glm::vec4(1.f));
+
+		auto xformed = transformStereoscopicPoints(copLeft, copRight, leftEyePos, rightEyePos, hingePts);
+		drawEye(leftEyePos, glm::vec4(1.f, 0.f, 0.f, 0.5f), glm::vec4(1.f, 0.f, 0.f, 1.f), xformed);
+		drawEye(rightEyePos, glm::vec4(0.f, 1.f, 0.f, 0.5f), glm::vec4(0.f, 1.f, 0.f, 1.f), xformed);
+		drawOBJ(xformed, glm::vec4(1.f, 1.f, 0.f, 0.8f));
+		drawHingeAngle(xformed, glm::vec4(1.f, 1.f, 0.f, 1.f));
+
+		auto iL = getScreenIntersections(copLeft, hingePts);
+		auto iR = getScreenIntersections(copRight, hingePts);
+
+		// Calc intersection points
+		for (int i = 0; i < hingePts.size(); ++i)
+		{
+			DebugDrawer::getInstance().setTransform(glm::translate(glm::mat4(), iL[i]));
+			DebugDrawer::getInstance().drawArc(0.1f, 0.1f, 0.f, 360.f, glm::vec4(1.f, 0.f, 1.f, 1.f), false);
+
+			DebugDrawer::getInstance().setTransform(glm::translate(glm::mat4(), iR[i]));
+			DebugDrawer::getInstance().drawArc(0.1f, 0.1f, 0.f, 360.f, glm::vec4(1.f, 0.f, 1.f, 1.f), false);
+		}
 	}
 }
 
@@ -87,6 +123,28 @@ void UntrackedStereoDiagram::setViewAngle(float angle)
 		m_fViewingAngle = angle;
 }
 
+float UntrackedStereoDiagram::getProjectionAngle()
+{
+	return m_fProjectionAngle;
+}
+
+void UntrackedStereoDiagram::setProjectionAngle(float angle)
+{
+	if (angle > -90.f && angle < 90.f)
+		m_fProjectionAngle = angle;
+}
+
+float UntrackedStereoDiagram::getEyeSeparation()
+{
+	return m_fEyeSeparation;
+}
+
+void UntrackedStereoDiagram::setEyeSeparation(float dist)
+{
+	if (dist >= 0.f )
+		m_fEyeSeparation = dist;
+}
+
 void UntrackedStereoDiagram::drawOBJ(std::vector<glm::vec3> obj, glm::vec4 col)
 {
 	unsigned int i = 0;
@@ -99,7 +157,7 @@ void UntrackedStereoDiagram::drawOBJ(std::vector<glm::vec3> obj, glm::vec4 col)
 			col,
 			pt + glm::vec3(0.f, 0.2f, 0.f),
 			glm::quat(m_mat4ScreenBasisOrtho),
-			0.2f,
+			0.5f,
 			Renderer::HEIGHT,
 			Renderer::CENTER,
 			Renderer::CENTER_BOTTOM
@@ -109,17 +167,16 @@ void UntrackedStereoDiagram::drawOBJ(std::vector<glm::vec3> obj, glm::vec4 col)
 	DebugDrawer::getInstance().setTransformDefault();
 
 	for (i = 0; i < obj.size() - 1; ++i)
-		DebugDrawer::getInstance().drawLine(obj[i], obj[i + 1]);
+		DebugDrawer::getInstance().drawLine(obj[i], obj[i + 1], col);
 }
 
-void UntrackedStereoDiagram::drawEye(glm::vec3 eyePos, glm::vec4 eyeCol, std::vector<glm::vec3> obj, glm::vec4 objCol, glm::vec4 rayCol)
+void UntrackedStereoDiagram::drawEye(glm::vec3 eyePos, glm::vec4 eyeCol, glm::vec4 rayCol, std::vector<glm::vec3> obj)
 {
 	float eyerad = glm::length(m_mat4ScreenBasis[1]) / 15.f;
 
 	DebugDrawer::getInstance().setTransform(glm::translate(glm::mat4(), eyePos));
-	DebugDrawer::getInstance().drawArc(eyerad, eyerad, 0.f, 360.f, eyeCol, false);
-
-	drawOBJ(obj, objCol);
+	//DebugDrawer::getInstance().drawArc(eyerad, eyerad, 0.f, 360.f, eyeCol, false);
+	Renderer::getInstance().drawPrimitive("icosphere", glm::translate(glm::scale(glm::vec3(eyerad)), eyePos), eyeCol, glm::vec4(1.f), 10.f);
 
 	DebugDrawer::getInstance().setTransformDefault();
 	for (auto pt : obj)
@@ -169,14 +226,14 @@ void UntrackedStereoDiagram::drawHingeAngle(std::vector<glm::vec3> pts, glm::vec
 		col,
 		glm::vec3(textTrans[3]),
 		glm::quat(textTrans),
-		0.2f,
+		0.5f,
 		Renderer::HEIGHT,
 		Renderer::CENTER,
 		Renderer::CENTER_TOP
 	);
 }
 
-std::vector<glm::vec3> UntrackedStereoDiagram::transformMonoscopicPoints(glm::vec3 centerOfProj, std::vector<glm::vec3> obj, glm::vec3 viewPos)
+std::vector<glm::vec3> UntrackedStereoDiagram::transformMonoscopicPoints(glm::vec3 centerOfProj, glm::vec3 viewPos, std::vector<glm::vec3> obj)
 {
 	auto intPts = getScreenIntersections(centerOfProj, obj);
 
@@ -194,6 +251,23 @@ std::vector<glm::vec3> UntrackedStereoDiagram::transformMonoscopicPoints(glm::ve
 	return ret;
 }
 
+std::vector<glm::vec3> UntrackedStereoDiagram::transformStereoscopicPoints(glm::vec3 centerOfProjL, glm::vec3 centerOfProjR, glm::vec3 viewPosL, glm::vec3 viewPosR, std::vector<glm::vec3> obj)
+{
+	std::vector<glm::vec3> iL(getScreenIntersections(centerOfProjL, obj));
+	std::vector<glm::vec3> iR(getScreenIntersections(centerOfProjR, obj));
+
+	std::vector<glm::vec3> ret;
+	for (int i = 0; i < obj.size(); ++i)
+	{
+		glm::vec3 pa, pb;
+		double mua, mub;
+		LineLineIntersect(viewPosL, iL[i], viewPosR, iR[i], &pa, &pb, &mua, &mub);
+		ret.push_back((pa + pb) / 2.f);
+	}
+
+	return ret;
+}
+
 std::vector<glm::vec3> UntrackedStereoDiagram::getScreenIntersections(glm::vec3 centerOfProjection, std::vector<glm::vec3> pts)
 {
 	std::vector<glm::vec3> ret;
@@ -205,4 +279,57 @@ std::vector<glm::vec3> UntrackedStereoDiagram::getScreenIntersections(glm::vec3 
 		ret.push_back(centerOfProjection + (pt - centerOfProjection) * ptDist);
 	}
 	return ret;
+}
+
+/*
+from http://paulbourke.net/geometry/pointlineplane/lineline.c
+
+Calculate the line segment PaPb that is the shortest route between
+two lines P1P2 and P3P4. Calculate also the values of mua and mub where
+Pa = P1 + mua (P2 - P1)
+Pb = P3 + mub (P4 - P3)
+Return false if no solution exists.
+*/
+bool UntrackedStereoDiagram::LineLineIntersect(	glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, glm::vec3 p4, glm::vec3 *pa, glm::vec3 *pb, double *mua, double *mub)
+{
+	glm::vec3 p13, p43, p21;
+	double d1343, d4321, d1321, d4343, d2121;
+	double numer, denom;
+
+	p13.x = p1.x - p3.x;
+	p13.y = p1.y - p3.y;
+	p13.z = p1.z - p3.z;
+	p43.x = p4.x - p3.x;
+	p43.y = p4.y - p3.y;
+	p43.z = p4.z - p3.z;
+	if (glm::abs(p43.x) < glm::epsilon<float>() && glm::abs(p43.y) < glm::epsilon<float>() && glm::abs(p43.z) < glm::epsilon<float>())
+		return false;
+	p21.x = p2.x - p1.x;
+	p21.y = p2.y - p1.y;
+	p21.z = p2.z - p1.z;
+	if (glm::abs(p21.x) < glm::epsilon<float>() && glm::abs(p21.y) < glm::epsilon<float>() && glm::abs(p21.z) < glm::epsilon<float>())
+		return false;
+
+	d1343 = p13.x * p43.x + p13.y * p43.y + p13.z * p43.z;
+	d4321 = p43.x * p21.x + p43.y * p21.y + p43.z * p21.z;
+	d1321 = p13.x * p21.x + p13.y * p21.y + p13.z * p21.z;
+	d4343 = p43.x * p43.x + p43.y * p43.y + p43.z * p43.z;
+	d2121 = p21.x * p21.x + p21.y * p21.y + p21.z * p21.z;
+
+	denom = d2121 * d4343 - d4321 * d4321;
+	if (glm::abs(denom) < glm::epsilon<float>())
+		return false;
+	numer = d1343 * d4321 - d1321 * d4343;
+
+	*mua = numer / denom;
+	*mub = (d1343 + d4321 * (*mua)) / d4343;
+
+	pa->x = p1.x + *mua * p21.x;
+	pa->y = p1.y + *mua * p21.y;
+	pa->z = p1.z + *mua * p21.z;
+	pb->x = p3.x + *mub * p43.x;
+	pb->y = p3.y + *mub * p43.y;
+	pb->z = p3.z + *mub * p43.z;
+
+	return true;
 }
