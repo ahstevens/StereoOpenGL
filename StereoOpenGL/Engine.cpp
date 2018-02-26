@@ -267,7 +267,8 @@ void Engine::receive(void * data)
 			std::cout << "\t" << m_msRenderTime.count() << "ms\tRendering" << std::endl;
 		}
 	}
-	if (eventData[0] == GLFWInputBroadcaster::EVENT::KEY_HOLD)
+
+	if (eventData[0] == GLFWInputBroadcaster::EVENT::KEY_DOWN || eventData[0] == GLFWInputBroadcaster::EVENT::KEY_HOLD)
 	{
 		float delta = 0.1f;
 
@@ -279,6 +280,11 @@ void Engine::receive(void * data)
 		m_Head.pos += glm::vec3(0.f, 1.f, 0.f) * delta;
 		if (eventData[1] == GLFW_KEY_DOWN)
 			m_Head.pos -= glm::vec3(0.f, 1.f, 0.f) * delta;
+
+		if (eventData[1] == GLFW_KEY_LEFT_BRACKET)
+			g_pDiagram->setViewAngle(g_pDiagram->getViewAngle() - 1.f);
+		if (eventData[1] == GLFW_KEY_RIGHT_BRACKET)
+			g_pDiagram->setViewAngle(g_pDiagram->getViewAngle() + 1.f);
 	}
 }
 
@@ -366,17 +372,17 @@ void Engine::makeScene()
 		std::stringstream ss;
 		ss.precision(2);
 
-		ss << std::fixed << m_msFrameTime.count() << "ms/frame | " << 1.f / std::chrono::duration_cast<std::chrono::duration<float>>(m_msFrameTime).count() << "fps | Angle = " << angle;
+		ss << std::fixed << m_msFrameTime.count() << "ms/frame\n" << 1.f / std::chrono::duration_cast<std::chrono::duration<float>>(m_msFrameTime).count() << "fps";
 
 		Renderer::getInstance().drawUIText(
 			ss.str(),
 			glm::vec4(1.f),
-			glm::vec3(0.f),
+			glm::vec3(m_ivec2MainWindowSize.x, 0.f, 0.f),
 			glm::quat(),
-			20.f,
+			40.f,
 			Renderer::HEIGHT,
-			Renderer::CENTER,
-			Renderer::BOTTOM_LEFT
+			Renderer::RIGHT,
+			Renderer::BOTTOM_RIGHT
 			);
 	}
 
