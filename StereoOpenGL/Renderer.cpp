@@ -40,6 +40,8 @@ bool Renderer::init()
 	// add a directional light and change its ambient coefficient
 	m_pLighting->addDirectLight()->ambientCoefficient = 0.5f;
 
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 	glCreateBuffers(1, &m_glFrameUBO);
 	glNamedBufferData(m_glFrameUBO, sizeof(FrameUniforms), NULL, GL_STATIC_DRAW); // allocate memory
 	glBindBufferRange(GL_UNIFORM_BUFFER, SCENE_UNIFORM_BUFFER_LOCATION, m_glFrameUBO, 0, sizeof(FrameUniforms));
@@ -167,6 +169,7 @@ bool Renderer::drawPrimitive(std::string primName, glm::mat4 modelTransform, glm
 	rs.diffuseColor = diffuseColor;
 	rs.specularColor = specularColor;
 	rs.specularExponent = specularExponent;
+	rs.hasTransparency = diffuseColor.a != 1.f;
 
 	if (primName.find("inverse") != std::string::npos)
 		rs.vertWindingOrder = GL_CW;
@@ -190,6 +193,7 @@ bool Renderer::drawFlatPrimitive(std::string primName, glm::mat4 modelTransform,
 	rs.vertCount = m_mapPrimitives[primName].second;
 	rs.indexType = GL_UNSIGNED_SHORT;
 	rs.diffuseColor = color;
+	rs.hasTransparency = color.a != 1.f;
 
 	if (primName.find("_inverse") != std::string::npos)
 		rs.vertWindingOrder = GL_CW;
@@ -358,21 +362,19 @@ void Renderer::RenderFrame(SceneViewInfo *sceneView3DInfo, SceneViewInfo *sceneV
 		processRenderQueue(m_vStaticRenderQueue_Opaque);
 		processRenderQueue(m_vDynamicRenderQueue_Opaque);
 
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-		processRenderQueue(m_vTransparentRenderQueue);
-
-		// UI ELEMENTS
-		if (sceneViewUIInfo)
+		if (m_vTransparentRenderQueue.size() > 0 || sceneViewUIInfo)
 		{
+			glEnable(GL_BLEND);
 			glDisable(GL_DEPTH_TEST);
-			RenderUI(sceneViewUIInfo, frameBuffer);
+			processRenderQueue(m_vTransparentRenderQueue);
+
+			// UI ELEMENTS
+			if (sceneViewUIInfo)
+				RenderUI(sceneViewUIInfo, frameBuffer);
+			
 			glEnable(GL_DEPTH_TEST);
+			glDisable(GL_BLEND);
 		}
-
-		glDisable(GL_BLEND);
-
 		glUseProgram(0);
 	// Reset the read and draw framebuffers to the default window-created framebuffer
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -511,7 +513,7 @@ void Renderer::setupPrimitives()
 {
 	generateIcosphere(4);
 	generateCylinder(32);
-	generateTorus(1.f, 0.025f, 32, 8);
+	generateTorus(1.f, 0.05f, 32, 8);
 	generatePlane();
 	generateBBox();
 }

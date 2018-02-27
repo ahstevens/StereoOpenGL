@@ -17,7 +17,7 @@
 UntrackedStereoDiagram*			g_pDiagram;
 
 float							g_fEyeSep = 6.3f;
-float							g_fDisplayDiag = 23.6f * INTOCM; // physical display diagonal measurement, given in inches, usually
+float							g_fDisplayDiag = 13.3f * INTOCM; // physical display diagonal measurement, given in inches, usually
 glm::vec3						g_vec3ScreenPos(0.f, 0.f, 10.f);
 glm::vec3						g_vec3ScreenNormal(0.f, 0.f, 1.f);
 glm::vec3						g_vec3ScreenUp(0.f, 1.f, 0.f);
@@ -277,7 +277,7 @@ void Engine::receive(void * data)
 		if (eventData[1] == GLFW_KEY_RIGHT)
 			m_Head.pos += glm::vec3(1.f, 0.f, 0.f) * delta;
 		if (eventData[1] == GLFW_KEY_UP)
-		m_Head.pos += glm::vec3(0.f, 1.f, 0.f) * delta;
+			m_Head.pos += glm::vec3(0.f, 1.f, 0.f) * delta;
 		if (eventData[1] == GLFW_KEY_DOWN)
 			m_Head.pos -= glm::vec3(0.f, 1.f, 0.f) * delta;
 
@@ -290,6 +290,11 @@ void Engine::receive(void * data)
 			g_pDiagram->setViewAngle(g_pDiagram->getViewAngle() - 1.f);
 		if (eventData[1] == GLFW_KEY_RIGHT_BRACKET)
 			g_pDiagram->setViewAngle(g_pDiagram->getViewAngle() + 1.f);
+
+		if (eventData[1] == GLFW_KEY_9)
+			g_pDiagram->setViewDistance(g_pDiagram->getViewDistance() - 0.1f);
+		if (eventData[1] == GLFW_KEY_0)
+			g_pDiagram->setViewDistance(g_pDiagram->getViewDistance() + 0.1f);
 
 		if (eventData[1] == GLFW_KEY_COMMA)
 			g_pDiagram->setProjectionAngle(g_pDiagram->getProjectionAngle() - 1.f);

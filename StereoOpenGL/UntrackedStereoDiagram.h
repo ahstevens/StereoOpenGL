@@ -13,6 +13,8 @@ public:
 
 	float getViewAngle();
 	void setViewAngle(float angle);
+	float getViewDistance();
+	void setViewDistance(float dist);
 	float getProjectionAngle();
 	void setProjectionAngle(float angle);
 	float getEyeSeparation();
@@ -46,8 +48,11 @@ private:
 	glm::vec3 m_vec3ObjOrigin;
 
 	float m_fProjectionAngle; // Range (-90, 90); 0 degrees is orthogonal to screen plane
+	float m_fProjectionDistance;
 	float m_fViewingAngle; // Range (-90, 90); 0 degrees is orthogonal to screen plane
-	float m_fViewingArcRadius;
+	float m_fViewingDistance;
 	float m_fEyeSeparation;
+
+	float m_fScreenWidth;
 };
 

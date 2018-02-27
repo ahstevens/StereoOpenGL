@@ -13,9 +13,11 @@ UntrackedStereoDiagram::UntrackedStereoDiagram(glm::mat4 screenBasis, glm::ivec2
 	, m_fHingeAngle(90.f)
 	, m_fHingeLength(2.5f)
 	, m_fProjectionAngle(0.f)
+	, m_fProjectionDistance(glm::length(screenBasis[1]) * (2.f / 3.f))
 	, m_fViewingAngle(0.f)
-	, m_fViewingArcRadius(glm::length(screenBasis[1]) * (2.f / 3.f))
+	, m_fViewingDistance(glm::length(screenBasis[1]) * (2.f / 3.f))
 	, m_fEyeSeparation(2.f)
+	, m_fScreenWidth(glm::length(screenBasis[1]))
 {
 	m_mat4ScreenBasisOrtho = glm::mat4(
 		glm::normalize(m_mat4ScreenBasis[0]),
@@ -38,34 +40,35 @@ void UntrackedStereoDiagram::draw()
 	DebugDrawer::getInstance().setTransform(m_mat4ScreenBasisOrtho);
 	
 	// Screen
-	DebugDrawer::getInstance().drawLine(glm::vec3(m_fViewingArcRadius, 0.f, 0.f), glm::vec3(-m_fViewingArcRadius, 0.f, 0.f));
+	DebugDrawer::getInstance().drawLine(glm::vec3(m_fScreenWidth, 0.f, 0.f), glm::vec3(-m_fScreenWidth, 0.f, 0.f));
 
 	// Viewing Arc
-	DebugDrawer::getInstance().drawArc(m_fViewingArcRadius, m_fViewingArcRadius, 180.f, 360.f, glm::vec4(0.f, 1.f, 1.f, 1.f), false);
+	DebugDrawer::getInstance().drawArc(m_fViewingDistance, m_fViewingDistance, 180.f, 360.f, glm::vec4(0.f, 1.f, 1.f, 1.f), false);
 
-	float offsetAngle = glm::degrees(glm::asin(m_fEyeSeparation / (2.f * m_fViewingArcRadius)));
+	float projAngleOffset = glm::degrees(glm::asin(m_fEyeSeparation / (2.f * m_fProjectionDistance)));
 
 	// Center of Projection
-	glm::mat4 copBasis = glm::rotate(glm::mat4(), glm::radians(m_fProjectionAngle), glm::vec3(m_mat4ScreenBasisOrtho[2])) * glm::translate(m_mat4ScreenBasisOrtho, glm::vec3(0.f, -m_fViewingArcRadius, 0.f));
+	glm::mat4 copBasis = glm::rotate(glm::mat4(), glm::radians(m_fProjectionAngle), glm::vec3(m_mat4ScreenBasisOrtho[2])) * glm::translate(m_mat4ScreenBasisOrtho, glm::vec3(0.f, -m_fProjectionDistance, 0.f));
 	glm::vec3 copPos(copBasis[3]);
-	glm::vec3 copLeft = (glm::rotate(glm::mat4(), glm::radians(m_fProjectionAngle - offsetAngle), glm::vec3(m_mat4ScreenBasisOrtho[2])) * glm::translate(m_mat4ScreenBasisOrtho, glm::vec3(0.f, -m_fViewingArcRadius, 0.f)))[3];
-	glm::vec3 copRight = (glm::rotate(glm::mat4(), glm::radians(m_fProjectionAngle + offsetAngle), glm::vec3(m_mat4ScreenBasisOrtho[2])) * glm::translate(m_mat4ScreenBasisOrtho, glm::vec3(0.f, -m_fViewingArcRadius, 0.f)))[3];
+	glm::vec3 copLeft = (glm::rotate(glm::mat4(), glm::radians(m_fProjectionAngle - projAngleOffset), glm::vec3(m_mat4ScreenBasisOrtho[2])) * glm::translate(m_mat4ScreenBasisOrtho, glm::vec3(0.f, -m_fProjectionDistance, 0.f)))[3];
+	glm::vec3 copRight = (glm::rotate(glm::mat4(), glm::radians(m_fProjectionAngle + projAngleOffset), glm::vec3(m_mat4ScreenBasisOrtho[2])) * glm::translate(m_mat4ScreenBasisOrtho, glm::vec3(0.f, -m_fProjectionDistance, 0.f)))[3];
 
-	glm::mat4 viewBasis = glm::rotate(glm::mat4(), glm::radians(m_fViewingAngle), glm::vec3(m_mat4ScreenBasisOrtho[2])) * glm::translate(m_mat4ScreenBasisOrtho, glm::vec3(0.f, -m_fViewingArcRadius, 0.f));
+	glm::mat4 viewBasis = glm::rotate(glm::mat4(), glm::radians(m_fViewingAngle), glm::vec3(m_mat4ScreenBasisOrtho[2])) * glm::translate(m_mat4ScreenBasisOrtho, glm::vec3(0.f, -m_fViewingDistance, 0.f));
 	glm::vec3 viewPos(viewBasis[3]);
 
 	glm::vec3 screenViewVec = screenOrigin - viewPos;
 
 	glm::vec3 screenViewVecPerp = glm::cross(glm::vec3(m_mat4ScreenBasisOrtho[2]), glm::normalize(screenViewVec));
 
+	float viewAngleOffset = glm::degrees(glm::asin(m_fEyeSeparation / (2.f * m_fViewingDistance)));
 
-	glm::vec3 leftEyePos = (glm::rotate(glm::mat4(), glm::radians(m_fViewingAngle - offsetAngle), glm::vec3(m_mat4ScreenBasisOrtho[2])) * glm::translate(m_mat4ScreenBasisOrtho, glm::vec3(0.f, -m_fViewingArcRadius, 0.f)))[3];
-	glm::vec3 rightEyePos = (glm::rotate(glm::mat4(), glm::radians(m_fViewingAngle + offsetAngle), glm::vec3(m_mat4ScreenBasisOrtho[2])) * glm::translate(m_mat4ScreenBasisOrtho, glm::vec3(0.f, -m_fViewingArcRadius, 0.f)))[3];
+	glm::vec3 leftEyePos = (glm::rotate(glm::mat4(), glm::radians(m_fViewingAngle - viewAngleOffset), glm::vec3(m_mat4ScreenBasisOrtho[2])) * glm::translate(m_mat4ScreenBasisOrtho, glm::vec3(0.f, -m_fViewingDistance, 0.f)))[3];
+	glm::vec3 rightEyePos = (glm::rotate(glm::mat4(), glm::radians(m_fViewingAngle + viewAngleOffset), glm::vec3(m_mat4ScreenBasisOrtho[2])) * glm::translate(m_mat4ScreenBasisOrtho, glm::vec3(0.f, -m_fViewingDistance, 0.f)))[3];
 
 	// Hinge
 	auto hingePts = getHinge();
 
-	if (true)
+	if (false)
 	{
 		drawEye(copPos, glm::vec4(1.f, 1.f, 1.f, 0.5f), glm::vec4(1.f, 1.f, 1.f, 0.8f), hingePts);
 		drawOBJ(hingePts, glm::vec4(1.f));
@@ -123,6 +126,17 @@ void UntrackedStereoDiagram::setViewAngle(float angle)
 		m_fViewingAngle = angle;
 }
 
+float UntrackedStereoDiagram::getViewDistance()
+{
+	return m_fViewingDistance;
+}
+
+void UntrackedStereoDiagram::setViewDistance(float dist)
+{
+	if (dist > 0.f)
+		m_fViewingDistance = dist;
+}
+
 float UntrackedStereoDiagram::getProjectionAngle()
 {
 	return m_fProjectionAngle;
@@ -176,7 +190,7 @@ void UntrackedStereoDiagram::drawEye(glm::vec3 eyePos, glm::vec4 eyeCol, glm::ve
 
 	DebugDrawer::getInstance().setTransform(glm::translate(glm::mat4(), eyePos));
 	//DebugDrawer::getInstance().drawArc(eyerad, eyerad, 0.f, 360.f, eyeCol, false);
-	Renderer::getInstance().drawPrimitive("icosphere", glm::translate(glm::scale(glm::vec3(eyerad)), eyePos), eyeCol, glm::vec4(1.f), 10.f);
+	Renderer::getInstance().drawPrimitive("icosphere", glm::translate(glm::mat4(), eyePos) * glm::scale(glm::vec3(eyerad)), eyeCol, glm::vec4(1.f), 10.f);
 
 	DebugDrawer::getInstance().setTransformDefault();
 	for (auto pt : obj)
