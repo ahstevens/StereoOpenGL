@@ -188,6 +188,8 @@
     <ClInclude Include="UntrackedStereoDiagram.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="shaders\grid.frag" />
+    <None Include="shaders\grid.vert" />
     <None Include="shaders\windowtexture.frag" />
     <None Include="shaders\desktopwindow.vert" />
     <None Include="shaders\flat.frag" />

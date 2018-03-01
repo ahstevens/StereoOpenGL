@@ -203,6 +203,29 @@ bool Renderer::drawFlatPrimitive(std::string primName, glm::mat4 modelTransform,
 	return true;
 }
 
+bool Renderer::drawPrimitiveCustom(std::string primName, glm::mat4 modelTransform, std::string shaderName)
+{
+	if (m_mapPrimitives.find(primName) == m_mapPrimitives.end())
+		return false;
+
+
+	RendererSubmission rs;
+	rs.glPrimitiveType = primName.find("_line") != std::string::npos ? GL_LINES : GL_TRIANGLES;
+	rs.shaderName = shaderName;
+	rs.modelToWorldTransform = modelTransform;
+	rs.VAO = m_mapPrimitives[primName].first;
+	rs.vertCount = m_mapPrimitives[primName].second;
+	rs.indexType = GL_UNSIGNED_SHORT;
+	rs.diffuseColor = glm::vec4(1.f);
+
+	if (primName.find("_inverse") != std::string::npos)
+		rs.vertWindingOrder = GL_CW;
+
+	addToDynamicRenderQueue(rs);
+
+	return true;
+}
+
 void Renderer::drawConnector(glm::vec3 from, glm::vec3 to, float thickness, glm::vec4 color)
 {
 	float connectorRadius = thickness * 0.5f;
@@ -271,6 +294,7 @@ void Renderer::setupShaders()
 	m_mapShaders["lightingWireframe"] = m_Shaders.AddProgramFromExts({ "shaders/lighting.vert", "shaders/lightingWF.geom", "shaders/lightingWF.frag" });
 	m_mapShaders["flat"] = m_Shaders.AddProgramFromExts({ "shaders/flat.vert", "shaders/flat.frag" });
 	m_mapShaders["debug"] = m_Shaders.AddProgramFromExts({ "shaders/flat.vert", "shaders/flat.frag" });
+	m_mapShaders["grid"] = m_Shaders.AddProgramFromExts({ "shaders/grid.vert", "shaders/grid.frag" });
 	m_mapShaders["solid"] = m_Shaders.AddProgramFromExts({ "shaders/solid.vert", "shaders/flat.frag" });
 	m_mapShaders["text"] = m_Shaders.AddProgramFromExts({ "shaders/text.vert", "shaders/text.frag" });
 

@@ -18,10 +18,12 @@ UntrackedStereoDiagram*			g_pDiagram;
 
 float							g_fEyeSep = 6.3f;
 float							g_fDisplayDiag = 13.3f * INTOCM; // physical display diagonal measurement, given in inches, usually
-glm::vec3						g_vec3ScreenPos(0.f, 0.f, 10.f);
+glm::vec3						g_vec3ScreenPos(0.f, 0.f, 0.f);
 glm::vec3						g_vec3ScreenNormal(0.f, 0.f, 1.f);
 glm::vec3						g_vec3ScreenUp(0.f, 1.f, 0.f);
-bool							g_bStereo = false;
+float							g_fWedgeAngle = 90.f;
+float							g_fWedgeWidth = 10.f;
+bool							g_bStereo = true;
 
 //-----------------------------------------------------------------------------
 // Purpose: OpenGL Debug Callback Function
@@ -270,16 +272,17 @@ void Engine::receive(void * data)
 
 	if (eventData[0] == GLFWInputBroadcaster::EVENT::KEY_DOWN || eventData[0] == GLFWInputBroadcaster::EVENT::KEY_HOLD)
 	{
-		float delta = 0.1f;
+		float delta = 5.f;
 
-		if (eventData[1] == GLFW_KEY_LEFT)
-			m_Head.pos -= glm::vec3(1.f, 0.f, 0.f) * delta;
-		if (eventData[1] == GLFW_KEY_RIGHT)
-			m_Head.pos += glm::vec3(1.f, 0.f, 0.f) * delta;
+		//if (eventData[1] == GLFW_KEY_LEFT)
+		//	m_Head.pos -= glm::vec3(1.f, 0.f, 0.f) * delta;
+		//if (eventData[1] == GLFW_KEY_RIGHT)
+		//	m_Head.pos += glm::vec3(1.f, 0.f, 0.f) * delta;
+
 		if (eventData[1] == GLFW_KEY_UP)
-			m_Head.pos += glm::vec3(0.f, 1.f, 0.f) * delta;
+			g_fWedgeAngle += delta;
 		if (eventData[1] == GLFW_KEY_DOWN)
-			m_Head.pos -= glm::vec3(0.f, 1.f, 0.f) * delta;
+			g_fWedgeAngle -= delta;
 
 		if (eventData[1] == GLFW_KEY_MINUS)
 			g_pDiagram->setEyeSeparation(g_pDiagram->getEyeSeparation() - 0.1f);
@@ -379,7 +382,22 @@ void Engine::makeScene()
 	//Renderer::getInstance().drawPrimitive("torus", glm::translate(glm::mat4(), glm::vec3(x, y, z)) * glm::rotate(glm::mat4(), glm::radians(angle), glm::vec3(0.f, 1.f, 0.f)), glm::vec4(1.f, 0.f, 0.f, 1.f), glm::vec4(1.f), 10.f);
 	//Renderer::getInstance().drawPrimitive("icosphere", glm::translate(glm::mat4(), glm::vec3(x, y, z)) * glm::scale(glm::mat4(), glm::vec3(0.5f)), glm::vec4(0.f, 1.f, 0.f, 1.f), glm::vec4(1.f), 10.f);
 
-	g_pDiagram->draw();
+	float xoffset = (g_fWedgeWidth / 2.f) * glm::sin(glm::radians(g_fWedgeAngle / 2.f));
+	float zoffset = (g_fWedgeWidth / 2.f) * glm::cos(glm::radians(g_fWedgeAngle / 2.f));
+
+	// Left Plane
+	Renderer::getInstance().drawPrimitiveCustom(
+		"quaddouble",
+		glm::translate(glm::mat4(), glm::vec3(-xoffset, 0.f, zoffset)) * glm::rotate(glm::mat4(), glm::radians(270.f - g_fWedgeAngle / 2.f), glm::vec3(0.f, 1.f, 0.f)) * glm::scale(glm::mat4(), glm::vec3(g_fWedgeWidth)),
+		"grid");
+
+	// Right Plane
+	Renderer::getInstance().drawPrimitiveCustom(
+		"quaddouble",
+		glm::translate(glm::mat4(), glm::vec3(xoffset, 0.f, zoffset)) * glm::rotate(glm::mat4(), glm::radians(270.f + g_fWedgeAngle / 2.f), glm::vec3(0.f, 1.f, 0.f)) * glm::scale(glm::mat4(), glm::vec3(g_fWedgeWidth)),
+		"grid");
+
+	//g_pDiagram->draw();
 
 	//Renderer::getInstance().drawPrimitive("bbox", glm::translate(glm::mat4(), -m_Head.pos - (g_vec3ScreenPos + g_vec3ScreenNormal * g_fDisplayDepth * 0.5f)) * glm::scale(glm::mat4(), glm::vec3(0.001f)), glm::vec4(1.f), glm::vec4(1.f), 10.f);
 
@@ -387,7 +405,7 @@ void Engine::makeScene()
 		std::stringstream ss;
 		ss.precision(2);
 
-		ss << std::fixed << m_msFrameTime.count() << "ms/frame\n" << 1.f / std::chrono::duration_cast<std::chrono::duration<float>>(m_msFrameTime).count() << "fps";
+		ss << std::fixed << m_msFrameTime.count() << "ms/frame\n" << 1.f / std::chrono::duration_cast<std::chrono::duration<float>>(m_msFrameTime).count() << "fps | " << xoffset << " | " << zoffset;
 
 		Renderer::getInstance().drawUIText(
 			ss.str(),

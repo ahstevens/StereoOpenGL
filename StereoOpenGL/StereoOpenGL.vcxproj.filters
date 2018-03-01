@@ -124,5 +124,11 @@
     <None Include="shaders\windowtexture.frag">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="shaders\grid.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\grid.vert">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>
