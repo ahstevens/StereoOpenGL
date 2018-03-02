@@ -22,8 +22,8 @@ glm::vec3						g_vec3ScreenPos(0.f, 0.f, 0.f);
 glm::vec3						g_vec3ScreenNormal(0.f, 0.f, 1.f);
 glm::vec3						g_vec3ScreenUp(0.f, 1.f, 0.f);
 float							g_fWedgeAngle = 90.f;
-float							g_fWedgeWidth = 10.f;
-bool							g_bStereo = true;
+float							g_fWedgeWidth = 5.f;
+bool							g_bStereo = false;
 
 //-----------------------------------------------------------------------------
 // Purpose: OpenGL Debug Callback Function

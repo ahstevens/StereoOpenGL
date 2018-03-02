@@ -22,14 +22,16 @@ void main()
 	if (v4Color.a * diffColor.a == 0.f)
 		discard;
 	
+	vec2 gridCells = vec2(5, 5);
 	float gridLineWidth = 0.01f;
-	float falloff = 0.1;
+	float falloff = 0.01f;
 
-	float remainderX = mod(v2TexCoords.x, 1.f);
-	float remainderY = mod(v2TexCoords.y, 1.f);
+	float remainderX = mod(v2TexCoords.x * gridCells.x, 1.f);
+	float remainderY = mod(v2TexCoords.y * gridCells.y, 1.f);
 	
 	float blend = smoothstep(gridLineWidth, gridLineWidth + falloff, remainderX) * (1 - smoothstep(1.f - gridLineWidth - falloff, 1.f - gridLineWidth, remainderX)) *
         smoothstep(gridLineWidth, gridLineWidth + falloff, remainderY) * (1 - smoothstep(1.f - gridLineWidth - falloff, 1.f - gridLineWidth, remainderY));
 		
-	outputColor = blend * v4Color * diffColor;	
+	outputColor = v4Color * diffColor;
+	outputColor.xyz = mix(vec3(0.25f, 0.25f, 0.25f), outputColor.xyz, blend);
 }

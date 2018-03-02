@@ -23,10 +23,8 @@ out vec2 v2TexCoords;
 
 void main()
 {
-	vec2 gridCells = vec2(10, 10);
-
 	v4Color = v4ColorIn;
 	v3FragPos = vec3(m4Model * vec4(v3Position, 1.f));
-	v2TexCoords = v2TexCoordsIn * gridCells;
+	v2TexCoords = v2TexCoordsIn;
 	gl_Position = m4ViewProjection * m4Model * vec4(v3Position, 1.0);
 }
