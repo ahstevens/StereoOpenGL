@@ -17,6 +17,10 @@ in vec3 v3FragPos;
 in vec2 v2TexCoords;
 out vec4 outputColor;
 
+float pseudorand(vec2 co){
+    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+}
+
 void main()
 {
 	if (v4Color.a * diffColor.a == 0.f)
@@ -32,6 +36,8 @@ void main()
 	float blend = smoothstep(gridLineWidth, gridLineWidth + falloff, remainderX) * (1 - smoothstep(1.f - gridLineWidth - falloff, 1.f - gridLineWidth, remainderX)) *
         smoothstep(gridLineWidth, gridLineWidth + falloff, remainderY) * (1 - smoothstep(1.f - gridLineWidth - falloff, 1.f - gridLineWidth, remainderY));
 		
+	blend *= pseudorand(v2TexCoords);
+
 	outputColor = v4Color * diffColor;
 	outputColor.xyz = mix(vec3(0.25f, 0.25f, 0.25f), outputColor.xyz, blend);
 }
