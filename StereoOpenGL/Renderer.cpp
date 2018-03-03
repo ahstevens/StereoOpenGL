@@ -297,9 +297,11 @@ void Renderer::setupShaders()
 	m_mapShaders["grid"] = m_Shaders.AddProgramFromExts({ "shaders/grid.vert", "shaders/grid.frag" });
 	m_mapShaders["solid"] = m_Shaders.AddProgramFromExts({ "shaders/solid.vert", "shaders/flat.frag" });
 	m_mapShaders["text"] = m_Shaders.AddProgramFromExts({ "shaders/text.vert", "shaders/text.frag" });
+	m_mapShaders["shadow"] = m_Shaders.AddProgramFromExts({ "shaders/shadow.vert", "shaders/shadow.frag" });
 
 	m_pLighting->addShaderToUpdate(m_mapShaders["lighting"]);
 	m_pLighting->addShaderToUpdate(m_mapShaders["lightingWireframe"]);
+	m_pLighting->addShaderToUpdate(m_mapShaders["shadow"]);
 }
 
 void Renderer::setupTextures()
@@ -364,8 +366,8 @@ void Renderer::RenderFrame(SceneViewInfo *sceneView3DInfo, SceneViewInfo *sceneV
 	glViewport(0, 0, sceneView3DInfo->m_nRenderWidth, sceneView3DInfo->m_nRenderHeight);
 	glNamedBufferSubData(m_glFrameUBO, offsetof(FrameUniforms, v4Viewport), sizeof(FrameUniforms::v4Viewport), glm::value_ptr(glm::vec4(0, 0, sceneView3DInfo->m_nRenderWidth, sceneView3DInfo->m_nRenderHeight)));
 
-	glClearColor(0.f, 0.f, 0.f, 1.0f); // nice background color, but not black
-	//glClearColor(0.33, 0.39, 0.49, 1.0); //VTT4D background
+	//glClearColor(0.f, 0.f, 0.f, 1.0f); // nice background color, but not black
+	glClearColor(0.33, 0.39, 0.49, 1.0); //VTT4D background
 
 	glEnable(GL_MULTISAMPLE);
 

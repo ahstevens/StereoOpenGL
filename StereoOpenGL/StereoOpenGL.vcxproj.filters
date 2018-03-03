@@ -54,6 +54,9 @@
     <ClCompile Include="UntrackedStereoDiagram.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Clapboard.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\shared\lodepng.h">
@@ -87,6 +90,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="UntrackedStereoDiagram.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Clapboard.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -128,6 +134,12 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="shaders\grid.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\shadow.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\shadow.frag">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

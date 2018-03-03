@@ -165,6 +165,7 @@
   <ItemGroup>
     <ClCompile Include="..\shared\lodepng.cpp" />
     <ClCompile Include="..\shared\pathtools.cpp" />
+    <ClCompile Include="Clapboard.cpp" />
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="GLFWInputBroadcaster.cpp" />
     <ClCompile Include="Icosphere.cpp" />
@@ -177,6 +178,7 @@
   <ItemGroup>
     <ClInclude Include="..\shared\lodepng.h" />
     <ClInclude Include="..\shared\pathtools.h" />
+    <ClInclude Include="Clapboard.h" />
     <ClInclude Include="Engine.h" />
     <ClInclude Include="DebugDrawer.h" />
     <ClInclude Include="GLFWInputBroadcaster.h" />
@@ -190,6 +192,8 @@
   <ItemGroup>
     <None Include="shaders\grid.frag" />
     <None Include="shaders\grid.vert" />
+    <None Include="shaders\shadow.frag" />
+    <None Include="shaders\shadow.vert" />
     <None Include="shaders\windowtexture.frag" />
     <None Include="shaders\desktopwindow.vert" />
     <None Include="shaders\flat.frag" />

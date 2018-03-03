@@ -1,6 +1,7 @@
 #include "Engine.h"
 #include "DebugDrawer.h"
 #include "UntrackedStereoDiagram.h"
+#include "Clapboard.h"
 
 #include <fstream>
 #include <sstream>
@@ -15,14 +16,13 @@
 #define INTOCM 2.54f
 
 UntrackedStereoDiagram*			g_pDiagram;
+Clapboard*						g_pClapboard;
 
 float							g_fEyeSep = 6.3f;
 float							g_fDisplayDiag = 13.3f * INTOCM; // physical display diagonal measurement, given in inches, usually
 glm::vec3						g_vec3ScreenPos(0.f, 0.f, 0.f);
 glm::vec3						g_vec3ScreenNormal(0.f, 0.f, 1.f);
 glm::vec3						g_vec3ScreenUp(0.f, 1.f, 0.f);
-float							g_fWedgeAngle = 90.f;
-float							g_fWedgeWidth = 5.f;
 bool							g_bStereo = false;
 
 //-----------------------------------------------------------------------------
@@ -152,7 +152,7 @@ bool Engine::init()
 	if (!Renderer::getInstance().init())
 		return false;
 
-	m_Head.pos = glm::vec3(0.f, 0.f, 67.f);
+	m_Head.pos = glm::vec3(0.f, 0.f, 57.f);
 	m_Head.rot = glm::quat(glm::inverse(glm::lookAt(m_Head.pos, glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f))));
 
 	float sizer = g_fDisplayDiag / sqrt(glm::dot(glm::vec2(m_ivec2MainWindowSize), glm::vec2(m_ivec2MainWindowSize)));
@@ -167,6 +167,7 @@ bool Engine::init()
 	);
 
 	g_pDiagram = new UntrackedStereoDiagram(screenTrans, m_ivec2MainWindowSize);
+	g_pClapboard = new Clapboard(5.f, 90.f);
 
 	createUIView();
 	createMonoView();
@@ -274,15 +275,15 @@ void Engine::receive(void * data)
 	{
 		float delta = 5.f;
 
-		//if (eventData[1] == GLFW_KEY_LEFT)
-		//	m_Head.pos -= glm::vec3(1.f, 0.f, 0.f) * delta;
-		//if (eventData[1] == GLFW_KEY_RIGHT)
-		//	m_Head.pos += glm::vec3(1.f, 0.f, 0.f) * delta;
+		if (eventData[1] == GLFW_KEY_LEFT)
+			m_Head.pos -= glm::vec3(1.f, 0.f, 0.f) * delta;
+		if (eventData[1] == GLFW_KEY_RIGHT)
+			m_Head.pos += glm::vec3(1.f, 0.f, 0.f) * delta;
 
 		if (eventData[1] == GLFW_KEY_UP)
-			g_fWedgeAngle += delta;
+			g_pClapboard->setAngle(g_pClapboard->getAngle() + delta);
 		if (eventData[1] == GLFW_KEY_DOWN)
-			g_fWedgeAngle -= delta;
+			g_pClapboard->setAngle(g_pClapboard->getAngle() - delta);
 
 		if (eventData[1] == GLFW_KEY_MINUS)
 			g_pDiagram->setEyeSeparation(g_pDiagram->getEyeSeparation() - 0.1f);
@@ -371,31 +372,20 @@ void Engine::update()
 
 void Engine::makeScene()
 {
-	float rotRadius = 0.f;
-	float osc = 0.f;
-	float rate_ms = 2500.f;
-	double ratio = (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - std::chrono::high_resolution_clock::time_point()).count() % static_cast<long long>(rate_ms)) / rate_ms;
-	float angle = 360.f * static_cast<float>(ratio);
-	float x = glm::cos(glm::radians(angle)) * rotRadius;
-	float y = glm::sin(glm::radians(angle)) * rotRadius;
-	float z = osc - (2.f * osc) * glm::cos(glm::radians(angle * 3.f));
+	//float rotRadius = 1.f;
+	//float osc = 1.f;
+	//float rate_ms = 2500.f;
+	//double ratio = (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - std::chrono::high_resolution_clock::time_point()).count() % static_cast<long long>(rate_ms)) / rate_ms;
+	//float angle = 360.f * static_cast<float>(ratio);
+	//float x = glm::cos(glm::radians(angle)) * rotRadius;
+	//float y = glm::sin(glm::radians(angle)) * rotRadius;
+	//float z = osc - (2.f * osc) * glm::cos(glm::radians(angle * 3.f));
 	//Renderer::getInstance().drawPrimitive("torus", glm::translate(glm::mat4(), glm::vec3(x, y, z)) * glm::rotate(glm::mat4(), glm::radians(angle), glm::vec3(0.f, 1.f, 0.f)), glm::vec4(1.f, 0.f, 0.f, 1.f), glm::vec4(1.f), 10.f);
 	//Renderer::getInstance().drawPrimitive("icosphere", glm::translate(glm::mat4(), glm::vec3(x, y, z)) * glm::scale(glm::mat4(), glm::vec3(0.5f)), glm::vec4(0.f, 1.f, 0.f, 1.f), glm::vec4(1.f), 10.f);
+	//Renderer::getInstance().drawPrimitiveCustom("torus", glm::translate(glm::mat4(), glm::vec3(x, y, z)) * glm::rotate(glm::mat4(), glm::radians(angle), glm::vec3(0.f, 1.f, 0.f)), "shadow");
+	//Renderer::getInstance().drawPrimitiveCustom("icosphere", glm::translate(glm::mat4(), glm::vec3(x, y, z)) * glm::scale(glm::mat4(), glm::vec3(0.5f)), "shadow");
 
-	float xoffset = (g_fWedgeWidth / 2.f) * glm::sin(glm::radians(g_fWedgeAngle / 2.f));
-	float zoffset = (g_fWedgeWidth / 2.f) * glm::cos(glm::radians(g_fWedgeAngle / 2.f));
-
-	// Left Plane
-	Renderer::getInstance().drawPrimitiveCustom(
-		"quaddouble",
-		glm::translate(glm::mat4(), glm::vec3(-xoffset, 0.f, zoffset)) * glm::rotate(glm::mat4(), glm::radians(270.f - g_fWedgeAngle / 2.f), glm::vec3(0.f, 1.f, 0.f)) * glm::scale(glm::mat4(), glm::vec3(g_fWedgeWidth)),
-		"grid");
-
-	// Right Plane
-	Renderer::getInstance().drawPrimitiveCustom(
-		"quaddouble",
-		glm::translate(glm::mat4(), glm::vec3(xoffset, 0.f, zoffset)) * glm::rotate(glm::mat4(), glm::radians(270.f + g_fWedgeAngle / 2.f), glm::vec3(0.f, 1.f, 0.f)) * glm::scale(glm::mat4(), glm::vec3(g_fWedgeWidth)),
-		"grid");
+	g_pClapboard->draw();
 
 	//g_pDiagram->draw();
 
@@ -405,7 +395,7 @@ void Engine::makeScene()
 		std::stringstream ss;
 		ss.precision(2);
 
-		ss << std::fixed << m_msFrameTime.count() << "ms/frame\n" << 1.f / std::chrono::duration_cast<std::chrono::duration<float>>(m_msFrameTime).count() << "fps | " << xoffset << " | " << zoffset;
+		ss << std::fixed << m_msFrameTime.count() << "ms/frame\n" << 1.f / std::chrono::duration_cast<std::chrono::duration<float>>(m_msFrameTime).count() << "fps";
 
 		Renderer::getInstance().drawUIText(
 			ss.str(),

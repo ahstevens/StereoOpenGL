@@ -27,7 +27,7 @@ void main()
 		discard;
 	
 	vec2 gridCells = vec2(5, 5);
-	float gridLineWidth = 0.01f;
+	float gridLineWidth = 0.05f;
 	float falloff = 0.01f;
 
 	float remainderX = mod(v2TexCoords.x * gridCells.x, 1.f);
@@ -39,5 +39,5 @@ void main()
 	blend *= pseudorand(v2TexCoords);
 
 	outputColor = v4Color * diffColor;
-	outputColor.xyz = mix(vec3(0.25f, 0.25f, 0.25f), outputColor.xyz, blend);
+	outputColor.xyz = mix(vec3(0.1f), outputColor.xyz, blend);
 }
