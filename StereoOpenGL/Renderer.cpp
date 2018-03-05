@@ -102,7 +102,7 @@ void Renderer::addToDynamicRenderQueue(RendererSubmission &rs)
 	GLTexture* diff = m_mapTextures[rs.diffuseTexName];
 	GLTexture* spec = m_mapTextures[rs.diffuseTexName];
 
-	if (rs.hasTransparency || diff->hasTransparency() || spec->hasTransparency() || rs.diffuseColor.a < 1.f || rs.specularColor.a < 1.f)
+	if (rs.hasTransparency || diff->hasTransparency() || spec->hasTransparency() || rs.diffuseColor.a < 1.f)
 	{
 		m_vDynamicRenderQueue_Transparency.push_back(rs);
 		m_vTransparentRenderQueue.push_back(rs);
@@ -157,10 +157,13 @@ bool Renderer::drawPrimitive(std::string primName, glm::mat4 modelTransform, std
 bool Renderer::drawPrimitive(std::string primName, glm::mat4 modelTransform, glm::vec4 diffuseColor, glm::vec4 specularColor, float specularExponent)
 {
 	if (m_mapPrimitives.find(primName) == m_mapPrimitives.end())
+	{
+		std::cerr << "Primitive \"" << primName << "\" not found!" << std::endl;
 		return false;
+	}
 
 	RendererSubmission rs;
-	rs.glPrimitiveType = GL_TRIANGLES;
+	rs.glPrimitiveType = primName.find("_line") != std::string::npos ? GL_LINES : GL_TRIANGLES;
 	rs.shaderName = "lighting";
 	rs.modelToWorldTransform = modelTransform;
 	rs.VAO = m_mapPrimitives[primName].first;
@@ -541,6 +544,7 @@ void Renderer::setupPrimitives()
 	generateCylinder(32);
 	generateTorus(1.f, 0.05f, 32, 8);
 	generatePlane();
+	generateCube();
 	generateBBox();
 }
 
@@ -829,6 +833,115 @@ void Renderer::generatePlane()
 	m_mapPrimitives["planedouble"] = m_mapPrimitives["quaddouble"] = std::make_pair(m_glPlaneVAO, 12); // two sided
 }
 
+void Renderer::generateCube()
+{
+	std::vector<PrimVert> verts;
+
+	glm::vec3 bboxMin(-0.5f);
+	glm::vec3 bboxMax(0.5f);
+
+	std::vector<GLushort> inds;
+
+	// Bottom
+	verts.push_back(PrimVert({ glm::vec3(bboxMin[0], bboxMin[1], bboxMin[2]), glm::vec3(0.f, -1.f, 0.f), glm::vec4(1.f), glm::vec2(0.f) }));
+	verts.push_back(PrimVert({ glm::vec3(bboxMax[0], bboxMin[1], bboxMin[2]), glm::vec3(0.f, -1.f, 0.f), glm::vec4(1.f), glm::vec2(1.f, 0.f) }));
+	verts.push_back(PrimVert({ glm::vec3(bboxMax[0], bboxMin[1], bboxMax[2]), glm::vec3(0.f, -1.f, 0.f), glm::vec4(1.f), glm::vec2(1.f) }));
+	verts.push_back(PrimVert({ glm::vec3(bboxMin[0], bboxMin[1], bboxMax[2]), glm::vec3(0.f, -1.f, 0.f), glm::vec4(1.f), glm::vec2(0.f, 1.f) }));
+	inds.push_back(verts.size() - 4);
+	inds.push_back(verts.size() - 3);
+	inds.push_back(verts.size() - 1);
+	inds.push_back(verts.size() - 3);
+	inds.push_back(verts.size() - 2);
+	inds.push_back(verts.size() - 1);
+
+	// Top
+	verts.push_back(PrimVert({ glm::vec3(bboxMax[0], bboxMax[1], bboxMax[2]), glm::vec3(0.f, 1.f, 0.f), glm::vec4(1.f), glm::vec2(1.f, 0.f) }));
+	verts.push_back(PrimVert({ glm::vec3(bboxMax[0], bboxMax[1], bboxMin[2]), glm::vec3(0.f, 1.f, 0.f), glm::vec4(1.f), glm::vec2(1.f) }));
+	verts.push_back(PrimVert({ glm::vec3(bboxMin[0], bboxMax[1], bboxMin[2]), glm::vec3(0.f, 1.f, 0.f), glm::vec4(1.f), glm::vec2(0.f, 1.f) }));
+	verts.push_back(PrimVert({ glm::vec3(bboxMin[0], bboxMax[1], bboxMax[2]), glm::vec3(0.f, 1.f, 0.f), glm::vec4(1.f), glm::vec2(0.f) }));
+	inds.push_back(verts.size() - 4);
+	inds.push_back(verts.size() - 3);
+	inds.push_back(verts.size() - 1);
+	inds.push_back(verts.size() - 3);
+	inds.push_back(verts.size() - 2);
+	inds.push_back(verts.size() - 1);
+
+	// Left
+	verts.push_back(PrimVert({ glm::vec3(bboxMin[0], bboxMin[1], bboxMin[2]), glm::vec3(-1.f, 0.f, 0.f), glm::vec4(1.f), glm::vec2(0.f) }));
+	verts.push_back(PrimVert({ glm::vec3(bboxMin[0], bboxMin[1], bboxMax[2]), glm::vec3(-1.f, 0.f, 0.f), glm::vec4(1.f), glm::vec2(1.f, 0.f) }));
+	verts.push_back(PrimVert({ glm::vec3(bboxMin[0], bboxMax[1], bboxMax[2]), glm::vec3(-1.f, 0.f, 0.f), glm::vec4(1.f), glm::vec2(1.f) }));
+	verts.push_back(PrimVert({ glm::vec3(bboxMin[0], bboxMax[1], bboxMin[2]), glm::vec3(-1.f, 0.f, 0.f), glm::vec4(1.f), glm::vec2(0.f, 1.f) }));
+	inds.push_back(verts.size() - 4);
+	inds.push_back(verts.size() - 3);
+	inds.push_back(verts.size() - 1);
+	inds.push_back(verts.size() - 3);
+	inds.push_back(verts.size() - 2);
+	inds.push_back(verts.size() - 1);
+
+	// Right
+	verts.push_back(PrimVert({ glm::vec3(bboxMax[0], bboxMax[1], bboxMax[2]), glm::vec3(1.f, 0.f, 0.f), glm::vec4(1.f), glm::vec2(0.f, 1.f) }));
+	verts.push_back(PrimVert({ glm::vec3(bboxMax[0], bboxMin[1], bboxMax[2]), glm::vec3(1.f, 0.f, 0.f), glm::vec4(1.f), glm::vec2(0.f) }));
+	verts.push_back(PrimVert({ glm::vec3(bboxMax[0], bboxMin[1], bboxMin[2]), glm::vec3(1.f, 0.f, 0.f), glm::vec4(1.f), glm::vec2(1.f, 0.f) }));
+	verts.push_back(PrimVert({ glm::vec3(bboxMax[0], bboxMax[1], bboxMin[2]), glm::vec3(1.f, 0.f, 0.f), glm::vec4(1.f), glm::vec2(1.f) }));
+	inds.push_back(verts.size() - 4);
+	inds.push_back(verts.size() - 3);
+	inds.push_back(verts.size() - 1);
+	inds.push_back(verts.size() - 3);
+	inds.push_back(verts.size() - 2);
+	inds.push_back(verts.size() - 1);
+
+	// Front
+	verts.push_back(PrimVert({ glm::vec3(bboxMax[0], bboxMax[1], bboxMax[2]), glm::vec3(0.f, 0.f, 1.f), glm::vec4(1.f), glm::vec2(1.f) }));
+	verts.push_back(PrimVert({ glm::vec3(bboxMin[0], bboxMax[1], bboxMax[2]), glm::vec3(0.f, 0.f, 1.f), glm::vec4(1.f), glm::vec2(0.f, 1.f) }));
+	verts.push_back(PrimVert({ glm::vec3(bboxMin[0], bboxMin[1], bboxMax[2]), glm::vec3(0.f, 0.f, 1.f), glm::vec4(1.f), glm::vec2(0.f) }));
+	verts.push_back(PrimVert({ glm::vec3(bboxMax[0], bboxMin[1], bboxMax[2]), glm::vec3(0.f, 0.f, 1.f), glm::vec4(1.f), glm::vec2(1.f, 0.f) }));
+	inds.push_back(verts.size() - 4);
+	inds.push_back(verts.size() - 3);
+	inds.push_back(verts.size() - 1);
+	inds.push_back(verts.size() - 3);
+	inds.push_back(verts.size() - 2);
+	inds.push_back(verts.size() - 1);
+
+	// Back
+	verts.push_back(PrimVert({ glm::vec3(bboxMin[0], bboxMin[1], bboxMin[2]), glm::vec3(0.f, 0.f, -1.f), glm::vec4(1.f), glm::vec2(1.f, 0.f) }));
+	verts.push_back(PrimVert({ glm::vec3(bboxMin[0], bboxMax[1], bboxMin[2]), glm::vec3(0.f, 0.f, -1.f), glm::vec4(1.f), glm::vec2(1.f) }));
+	verts.push_back(PrimVert({ glm::vec3(bboxMax[0], bboxMax[1], bboxMin[2]), glm::vec3(0.f, 0.f, -1.f), glm::vec4(1.f), glm::vec2(0.f, 1.f) }));
+	verts.push_back(PrimVert({ glm::vec3(bboxMax[0], bboxMin[1], bboxMin[2]), glm::vec3(0.f, 0.f, -1.f), glm::vec4(1.f), glm::vec2(0.f) }));
+	inds.push_back(verts.size() - 4);
+	inds.push_back(verts.size() - 3);
+	inds.push_back(verts.size() - 1);
+	inds.push_back(verts.size() - 3);
+	inds.push_back(verts.size() - 2);
+	inds.push_back(verts.size() - 1);
+
+	glGenVertexArrays(1, &m_glCubeVAO);
+	glGenBuffers(1, &m_glCubeVBO);
+	glGenBuffers(1, &m_glCubeEBO);
+
+	// Setup VAO
+	glBindVertexArray(m_glCubeVAO);
+	// Load data into vertex buffers
+	glBindBuffer(GL_ARRAY_BUFFER, m_glCubeVBO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_glCubeEBO);
+
+	// Set the vertex attribute pointers
+	glEnableVertexAttribArray(POSITION_ATTRIB_LOCATION);
+	glVertexAttribPointer(POSITION_ATTRIB_LOCATION, 3, GL_FLOAT, GL_FALSE, sizeof(PrimVert), (GLvoid*)offsetof(PrimVert, p));
+	glEnableVertexAttribArray(NORMAL_ATTRIB_LOCATION);
+	glVertexAttribPointer(NORMAL_ATTRIB_LOCATION, 3, GL_FLOAT, GL_FALSE, sizeof(PrimVert), (GLvoid*)offsetof(PrimVert, n));
+	glEnableVertexAttribArray(COLOR_ATTRIB_LOCATION);
+	glVertexAttribPointer(COLOR_ATTRIB_LOCATION, 4, GL_FLOAT, GL_FALSE, sizeof(PrimVert), (GLvoid*)offsetof(PrimVert, c));
+	glEnableVertexAttribArray(TEXCOORD_ATTRIB_LOCATION);
+	glVertexAttribPointer(TEXCOORD_ATTRIB_LOCATION, 2, GL_FLOAT, GL_FALSE, sizeof(PrimVert), (GLvoid*)offsetof(PrimVert, t));
+	glBindVertexArray(0);
+
+	// Alloc buffer and store data
+	glNamedBufferStorage(m_glCubeVBO, verts.size() * sizeof(PrimVert), &verts[0], GL_NONE);
+	// Element array buffer
+	glNamedBufferStorage(m_glCubeEBO, inds.size() * sizeof(GLushort), &inds[0], GL_NONE);
+
+	m_mapPrimitives["cube"] = m_mapPrimitives["box"] = std::make_pair(m_glCubeVAO, inds.size());
+}
 
 // Essentially a unit cube wireframe
 void Renderer::generateBBox()

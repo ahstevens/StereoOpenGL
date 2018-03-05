@@ -26,7 +26,7 @@ void main()
 	if (v4Color.a * diffColor.a == 0.f)
 		discard;
 	
-	vec2 gridCells = vec2(5, 5);
+	vec2 gridCells = vec2(6, 6);
 	float gridLineWidth = 0.05f;
 	float falloff = 0.01f;
 

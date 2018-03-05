@@ -372,20 +372,24 @@ void Engine::update()
 
 void Engine::makeScene()
 {
-	//float rotRadius = 1.f;
-	//float osc = 1.f;
+	//float rotRadius = 0.f;
+	//float osc = 0.f;
 	//float rate_ms = 2500.f;
 	//double ratio = (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - std::chrono::high_resolution_clock::time_point()).count() % static_cast<long long>(rate_ms)) / rate_ms;
 	//float angle = 360.f * static_cast<float>(ratio);
 	//float x = glm::cos(glm::radians(angle)) * rotRadius;
 	//float y = glm::sin(glm::radians(angle)) * rotRadius;
 	//float z = osc - (2.f * osc) * glm::cos(glm::radians(angle * 3.f));
-	//Renderer::getInstance().drawPrimitive("torus", glm::translate(glm::mat4(), glm::vec3(x, y, z)) * glm::rotate(glm::mat4(), glm::radians(angle), glm::vec3(0.f, 1.f, 0.f)), glm::vec4(1.f, 0.f, 0.f, 1.f), glm::vec4(1.f), 10.f);
-	//Renderer::getInstance().drawPrimitive("icosphere", glm::translate(glm::mat4(), glm::vec3(x, y, z)) * glm::scale(glm::mat4(), glm::vec3(0.5f)), glm::vec4(0.f, 1.f, 0.f, 1.f), glm::vec4(1.f), 10.f);
+	//Renderer::getInstance().drawPrimitive("torus", glm::translate(glm::mat4(), glm::vec3(x, y, z)) * glm::rotate(glm::mat4(), glm::radians(angle), glm::vec3(0.f, 1.f, 0.f)), glm::vec4(0.5f, 0.f, 0.f, 1.f), glm::vec4(1.f), 10.f);
+	//Renderer::getInstance().drawPrimitive("box", glm::translate(glm::mat4(), glm::vec3(x, y, z)) * glm::rotate(glm::mat4(), glm::radians(-angle), glm::vec3(0.f, 1.f, 0.f)) * glm::scale(glm::mat4(), glm::vec3(0.5f)), glm::vec4(0.f, 0.5f, 0.f, 1.f), glm::vec4(0.8f), 10.f);
 	//Renderer::getInstance().drawPrimitiveCustom("torus", glm::translate(glm::mat4(), glm::vec3(x, y, z)) * glm::rotate(glm::mat4(), glm::radians(angle), glm::vec3(0.f, 1.f, 0.f)), "shadow");
-	//Renderer::getInstance().drawPrimitiveCustom("icosphere", glm::translate(glm::mat4(), glm::vec3(x, y, z)) * glm::scale(glm::mat4(), glm::vec3(0.5f)), "shadow");
+	//Renderer::getInstance().drawPrimitiveCustom("box", glm::translate(glm::mat4(), glm::vec3(x, y, z)) * glm::rotate(glm::mat4(), glm::radians(-angle), glm::vec3(0.f, 1.f, 0.f)) * glm::scale(glm::mat4(), glm::vec3(0.5f)), "shadow");
 
 	g_pClapboard->draw();
+	
+	float cubeSize = 1.f;
+	Renderer::getInstance().drawPrimitive("cube", glm::translate(glm::mat4(), glm::vec3(g_pClapboard->getLength() * 1.1f, cubeSize / 2.f - g_pClapboard->getLength() / 2.f, g_pClapboard->getLength() * 2.f)), glm::vec4(1.f, 0.f, 0.f, 1.f), glm::vec4(1.f), 10.f);
+	Renderer::getInstance().drawPrimitiveCustom("cube", glm::translate(glm::mat4(), glm::vec3(g_pClapboard->getLength() * 1.1f, cubeSize / 2.f - g_pClapboard->getLength() / 2.f, g_pClapboard->getLength() * 2.f)), "shadow");
 
 	//g_pDiagram->draw();
 

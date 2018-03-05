@@ -200,6 +200,7 @@ private:
 	void generateTorus(float coreRadius, float meridianRadius, int numCoreSegments, int numMeridianSegments);
 	void generateCylinder(int numSegments);
 	void generatePlane();
+	void generateCube();
 	void generateBBox();
 
 	void setupText();
@@ -250,6 +251,7 @@ private:
 	GLuint m_glTorusVAO, m_glTorusVBO, m_glTorusEBO;
 	GLuint m_glCylinderVAO, m_glCylinderVBO, m_glCylinderEBO;
 	GLuint m_glPlaneVAO, m_glPlaneVBO, m_glPlaneEBO;
+	GLuint m_glCubeVAO, m_glCubeVBO, m_glCubeEBO;
 	GLuint m_glBBoxVAO, m_glBBoxVBO, m_glBBoxEBO;
 
 	GLuint m_glFrameUBO;
