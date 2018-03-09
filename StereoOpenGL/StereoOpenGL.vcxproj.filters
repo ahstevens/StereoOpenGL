@@ -54,7 +54,10 @@
     <ClCompile Include="UntrackedStereoDiagram.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Clapboard.cpp">
+    <ClCompile Include="Hinge.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="WinsockClient.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -92,7 +95,10 @@
     <ClInclude Include="UntrackedStereoDiagram.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Clapboard.h">
+    <ClInclude Include="Hinge.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="WinsockClient.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

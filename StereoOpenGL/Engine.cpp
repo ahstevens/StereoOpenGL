@@ -1,7 +1,10 @@
+#define _WINSOCKAPI_
+
 #include "Engine.h"
 #include "DebugDrawer.h"
 #include "UntrackedStereoDiagram.h"
-#include "Clapboard.h"
+#include "Hinge.h"
+#include "WinsockClient.h"
 
 #include <fstream>
 #include <sstream>
@@ -10,20 +13,21 @@
 #include <filesystem>
 #include <limits>
 
-#include <gtc/matrix_transform.hpp>
-#include <gtx/intersect.hpp>
-
 #define INTOCM 2.54f
 
 UntrackedStereoDiagram*			g_pDiagram;
-Clapboard*						g_pClapboard;
+Hinge*							g_pHinge;
 
 float							g_fEyeSep = 6.3f;
+glm::vec3						g_vec3HeadPos(0.f, 0.f, 57.f);
+glm::quat						g_qHeadRot(glm::inverse(glm::lookAt(g_vec3HeadPos, glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f))));
 float							g_fDisplayDiag = 13.3f * INTOCM; // physical display diagonal measurement, given in inches, usually
 glm::vec3						g_vec3ScreenPos(0.f, 0.f, 0.f);
 glm::vec3						g_vec3ScreenNormal(0.f, 0.f, 1.f);
 glm::vec3						g_vec3ScreenUp(0.f, 1.f, 0.f);
 bool							g_bStereo = false;
+
+WinsockClient*					g_pWSC;
 
 //-----------------------------------------------------------------------------
 // Purpose: OpenGL Debug Callback Function
@@ -152,9 +156,6 @@ bool Engine::init()
 	if (!Renderer::getInstance().init())
 		return false;
 
-	m_Head.pos = glm::vec3(0.f, 0.f, 57.f);
-	m_Head.rot = glm::quat(glm::inverse(glm::lookAt(m_Head.pos, glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f))));
-
 	float sizer = g_fDisplayDiag / sqrt(glm::dot(glm::vec2(m_ivec2MainWindowSize), glm::vec2(m_ivec2MainWindowSize)));
 
 	glm::vec2 screenSize_cm = glm::vec2(m_ivec2MainWindowSize) * sizer;
@@ -167,7 +168,12 @@ bool Engine::init()
 	);
 
 	g_pDiagram = new UntrackedStereoDiagram(screenTrans, m_ivec2MainWindowSize);
-	g_pClapboard = new Clapboard(5.f, 90.f);
+	g_pHinge = new Hinge(screenSize_cm.y, 90.f);
+
+	g_pWSC = new WinsockClient();
+
+	Renderer::getInstance().addTexture(new GLTexture("woodfloor.png", false));
+	Renderer::getInstance().addTexture(new GLTexture("wallpaper.png", false));
 
 	createUIView();
 	createMonoView();
@@ -276,14 +282,14 @@ void Engine::receive(void * data)
 		float delta = 5.f;
 
 		if (eventData[1] == GLFW_KEY_LEFT)
-			m_Head.pos -= glm::vec3(1.f, 0.f, 0.f) * delta;
+			g_vec3HeadPos -= glm::vec3(1.f, 0.f, 0.f) * delta;
 		if (eventData[1] == GLFW_KEY_RIGHT)
-			m_Head.pos += glm::vec3(1.f, 0.f, 0.f) * delta;
+			g_vec3HeadPos += glm::vec3(1.f, 0.f, 0.f) * delta;
 
 		if (eventData[1] == GLFW_KEY_UP)
-			g_pClapboard->setAngle(g_pClapboard->getAngle() + delta);
+			g_pHinge->setAngle(g_pHinge->getAngle() + delta);
 		if (eventData[1] == GLFW_KEY_DOWN)
-			g_pClapboard->setAngle(g_pClapboard->getAngle() - delta);
+			g_pHinge->setAngle(g_pHinge->getAngle() - delta);
 
 		if (eventData[1] == GLFW_KEY_MINUS)
 			g_pDiagram->setEyeSeparation(g_pDiagram->getEyeSeparation() - 0.1f);
@@ -304,6 +310,11 @@ void Engine::receive(void * data)
 			g_pDiagram->setProjectionAngle(g_pDiagram->getProjectionAngle() - 1.f);
 		if (eventData[1] == GLFW_KEY_PERIOD)
 			g_pDiagram->setProjectionAngle(g_pDiagram->getProjectionAngle() + 1.f);
+
+		if (eventData[1] == GLFW_KEY_C)
+			g_pWSC->connect("localhost");
+		if (eventData[1] == GLFW_KEY_T)
+			g_pWSC->send("Hello, world!");
 	}
 }
 
@@ -353,8 +364,8 @@ void Engine::update()
 	if (g_bStereo)
 	{
 		// Update eye positions using current head position
-		glm::vec3 leftEyePos = m_Head.pos - glm::normalize(glm::mat3_cast(m_Head.rot)[0]) * g_fEyeSep * 0.5f;
-		glm::vec3 rightEyePos = m_Head.pos + glm::normalize(glm::mat3_cast(m_Head.rot)[0]) * g_fEyeSep * 0.5f;
+		glm::vec3 leftEyePos = g_vec3HeadPos - glm::normalize(glm::mat3_cast(g_qHeadRot)[0]) * g_fEyeSep * 0.5f;
+		glm::vec3 rightEyePos = g_vec3HeadPos + glm::normalize(glm::mat3_cast(g_qHeadRot)[0]) * g_fEyeSep * 0.5f;
 
 		m_sviLeftEyeInfo.view = glm::translate(glm::mat4(), -leftEyePos);
 		m_sviLeftEyeInfo.projection = getViewingFrustum(leftEyePos, g_vec3ScreenPos, g_vec3ScreenNormal, g_vec3ScreenUp, glm::vec2(width_cm, height_cm));
@@ -364,9 +375,9 @@ void Engine::update()
 	}
 	else
 	{
-		m_sviMonoInfo.view = glm::translate(glm::mat4(), -m_Head.pos);
-		m_Head.rot = glm::inverse(m_sviMonoInfo.view);
-		m_sviMonoInfo.projection = getViewingFrustum(m_Head.pos, g_vec3ScreenPos, g_vec3ScreenNormal, g_vec3ScreenUp, glm::vec2(width_cm, height_cm));
+		m_sviMonoInfo.view = glm::translate(glm::mat4(), -g_vec3HeadPos);
+		g_qHeadRot = glm::inverse(m_sviMonoInfo.view);
+		m_sviMonoInfo.projection = getViewingFrustum(g_vec3HeadPos, g_vec3ScreenPos, g_vec3ScreenNormal, g_vec3ScreenUp, glm::vec2(width_cm, height_cm));
 	}
 }
 
@@ -385,11 +396,38 @@ void Engine::makeScene()
 	//Renderer::getInstance().drawPrimitiveCustom("torus", glm::translate(glm::mat4(), glm::vec3(x, y, z)) * glm::rotate(glm::mat4(), glm::radians(angle), glm::vec3(0.f, 1.f, 0.f)), "shadow");
 	//Renderer::getInstance().drawPrimitiveCustom("box", glm::translate(glm::mat4(), glm::vec3(x, y, z)) * glm::rotate(glm::mat4(), glm::radians(-angle), glm::vec3(0.f, 1.f, 0.f)) * glm::scale(glm::mat4(), glm::vec3(0.5f)), "shadow");
 
-	g_pClapboard->draw();
-	
-	float cubeSize = 1.f;
-	Renderer::getInstance().drawPrimitive("cube", glm::translate(glm::mat4(), glm::vec3(g_pClapboard->getLength() * 1.1f, cubeSize / 2.f - g_pClapboard->getLength() / 2.f, g_pClapboard->getLength() * 2.f)), glm::vec4(1.f, 0.f, 0.f, 1.f), glm::vec4(1.f), 10.f);
-	Renderer::getInstance().drawPrimitiveCustom("cube", glm::translate(glm::mat4(), glm::vec3(g_pClapboard->getLength() * 1.1f, cubeSize / 2.f - g_pClapboard->getLength() / 2.f, g_pClapboard->getLength() * 2.f)), "shadow");
+	g_pHinge->draw();
+	g_pHinge->drawShadow();
+
+	float sizer = g_fDisplayDiag / sqrt(glm::dot(glm::vec2(m_ivec2MainWindowSize), glm::vec2(m_ivec2MainWindowSize)));
+
+	glm::vec2 screenSize_cm = glm::vec2(m_ivec2MainWindowSize) * sizer;
+
+	Renderer::getInstance().drawPrimitive(
+		"quad",
+		glm::translate(glm::mat4(), glm::vec3(0.f, -screenSize_cm.y / 2.f, -10.f)) * glm::rotate(glm::mat4(), glm::radians(-90.f), glm::vec3(1.f, 0.f, 0.f)) * glm::scale(glm::mat4(), glm::vec3(80.f)),
+		"woodfloor.png",
+		"white",
+		10.f);
+
+	Renderer::getInstance().drawPrimitive(
+		"quad",
+		glm::translate(glm::mat4(), glm::vec3(0.f, 0.f, -50.f)) * glm::scale(glm::mat4(), glm::vec3(70.f)),
+		"wallpaper.png",
+		"white",
+		10.f);
+
+	float cubeSize = 5.f;
+	Renderer::getInstance().drawPrimitive(
+		"cube", 
+		glm::translate(glm::mat4(), glm::vec3(g_pHinge->getLength() * 0.75f, cubeSize / 2.f - screenSize_cm.y / 2.f, -5.f-g_pHinge->getLength())) * glm::scale(glm::mat4(), glm::vec3(cubeSize)),
+		glm::vec4(1.f, 0.f, 0.f, 1.f),
+		glm::vec4(1.f),
+		10.f);
+	Renderer::getInstance().drawPrimitiveCustom(
+		"cube",
+		glm::translate(glm::mat4(), glm::vec3(g_pHinge->getLength() * 0.75f, cubeSize / 2.f - screenSize_cm.y / 2.f, -5.f-g_pHinge->getLength())) * glm::scale(glm::mat4(), glm::vec3(cubeSize)),
+		"shadow");
 
 	//g_pDiagram->draw();
 
@@ -419,7 +457,7 @@ void Engine::makeScene()
 
 void Engine::render()
 {
-	Renderer::getInstance().sortTransparentObjects(m_Head.pos);
+	Renderer::getInstance().sortTransparentObjects(g_vec3HeadPos);
 
 	if (g_bStereo)
 	{

@@ -38,7 +38,7 @@ bool Renderer::init()
 {
 	m_pLighting = new LightingSystem();
 	// add a directional light and change its ambient coefficient
-	m_pLighting->addDirectLight()->ambientCoefficient = 0.5f;
+	m_pLighting->addDirectLight();//->ambientCoefficient = 0.05f;
 
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -131,15 +131,17 @@ void Renderer::clearUIRenderQueue()
 
 bool Renderer::drawPrimitive(std::string primName, glm::mat4 modelTransform, std::string diffuseTextureName, std::string specularTextureName, float specularExponent)
 {
-	if (m_mapPrimitives.find(primName) == m_mapPrimitives.end())
+	GLuint vao = getPrimitiveVAO(primName);
+	if (vao == 0u)
 		return false;
+
 
 	RendererSubmission rs;
 	rs.glPrimitiveType = GL_TRIANGLES;
 	rs.shaderName = "lighting";
 	rs.modelToWorldTransform = modelTransform;
-	rs.VAO = m_mapPrimitives[primName].first;
-	rs.vertCount = m_mapPrimitives[primName].second;
+	rs.VAO = vao;
+	rs.vertCount = getPrimitiveIndexCount(primName);
 	rs.indexType = GL_UNSIGNED_SHORT;
 	rs.diffuseTexName = diffuseTextureName;
 	rs.specularTexName = specularTextureName;
@@ -156,18 +158,17 @@ bool Renderer::drawPrimitive(std::string primName, glm::mat4 modelTransform, std
 
 bool Renderer::drawPrimitive(std::string primName, glm::mat4 modelTransform, glm::vec4 diffuseColor, glm::vec4 specularColor, float specularExponent)
 {
-	if (m_mapPrimitives.find(primName) == m_mapPrimitives.end())
-	{
-		std::cerr << "Primitive \"" << primName << "\" not found!" << std::endl;
+	GLuint vao = getPrimitiveVAO(primName);
+	if (vao == 0u)
 		return false;
-	}
+
 
 	RendererSubmission rs;
 	rs.glPrimitiveType = primName.find("_line") != std::string::npos ? GL_LINES : GL_TRIANGLES;
 	rs.shaderName = "lighting";
 	rs.modelToWorldTransform = modelTransform;
-	rs.VAO = m_mapPrimitives[primName].first;
-	rs.vertCount = m_mapPrimitives[primName].second;
+	rs.VAO = vao;
+	rs.vertCount = getPrimitiveIndexCount(primName);
 	rs.indexType = GL_UNSIGNED_SHORT;
 	rs.diffuseColor = diffuseColor;
 	rs.specularColor = specularColor;
@@ -184,7 +185,8 @@ bool Renderer::drawPrimitive(std::string primName, glm::mat4 modelTransform, glm
 
 bool Renderer::drawFlatPrimitive(std::string primName, glm::mat4 modelTransform, glm::vec4 color)
 {
-	if (m_mapPrimitives.find(primName) == m_mapPrimitives.end())
+	GLuint vao = getPrimitiveVAO(primName);
+	if (vao == 0u)
 		return false;
 
 
@@ -192,8 +194,8 @@ bool Renderer::drawFlatPrimitive(std::string primName, glm::mat4 modelTransform,
 	rs.glPrimitiveType = primName.find("_line") != std::string::npos ? GL_LINES : GL_TRIANGLES;
 	rs.shaderName = "flat";
 	rs.modelToWorldTransform = modelTransform;
-	rs.VAO = m_mapPrimitives[primName].first;
-	rs.vertCount = m_mapPrimitives[primName].second;
+	rs.VAO = vao;
+	rs.vertCount = getPrimitiveIndexCount(primName);
 	rs.indexType = GL_UNSIGNED_SHORT;
 	rs.diffuseColor = color;
 	rs.hasTransparency = color.a != 1.f;
@@ -206,9 +208,10 @@ bool Renderer::drawFlatPrimitive(std::string primName, glm::mat4 modelTransform,
 	return true;
 }
 
-bool Renderer::drawPrimitiveCustom(std::string primName, glm::mat4 modelTransform, std::string shaderName)
+bool Renderer::drawPrimitiveCustom(std::string primName, glm::mat4 modelTransform, std::string shaderName, std::string diffuseTexName, glm::vec4 diffuseColor)
 {
-	if (m_mapPrimitives.find(primName) == m_mapPrimitives.end())
+	GLuint vao = getPrimitiveVAO(primName);
+	if (vao == 0u)
 		return false;
 
 
@@ -216,10 +219,13 @@ bool Renderer::drawPrimitiveCustom(std::string primName, glm::mat4 modelTransfor
 	rs.glPrimitiveType = primName.find("_line") != std::string::npos ? GL_LINES : GL_TRIANGLES;
 	rs.shaderName = shaderName;
 	rs.modelToWorldTransform = modelTransform;
-	rs.VAO = m_mapPrimitives[primName].first;
-	rs.vertCount = m_mapPrimitives[primName].second;
+	rs.VAO = vao;
+	rs.vertCount = getPrimitiveIndexCount(primName);
 	rs.indexType = GL_UNSIGNED_SHORT;
-	rs.diffuseColor = glm::vec4(1.f);
+	rs.diffuseTexName = diffuseTexName;
+	rs.diffuseColor = diffuseColor;
+	rs.specularTexName = "white";
+	rs.specularExponent = 110.f;
 
 	if (primName.find("_inverse") != std::string::npos)
 		rs.vertWindingOrder = GL_CW;
@@ -304,6 +310,7 @@ void Renderer::setupShaders()
 
 	m_pLighting->addShaderToUpdate(m_mapShaders["lighting"]);
 	m_pLighting->addShaderToUpdate(m_mapShaders["lightingWireframe"]);
+	m_pLighting->addShaderToUpdate(m_mapShaders["grid"]);
 	m_pLighting->addShaderToUpdate(m_mapShaders["shadow"]);
 }
 
@@ -1445,6 +1452,32 @@ glm::vec2 Renderer::getTextDimensions(std::string text, float size, TextSizeDim 
 	GLfloat scale = size / (sizeDim == WIDTH ? textDims.x : textDims.y);
 
 	return textDims * scale;
+}
+
+GLuint Renderer::getPrimitiveVAO(std::string primName)
+{
+	auto prim = m_mapPrimitives.find(primName);
+
+	if (prim == m_mapPrimitives.end())
+	{
+		std::cerr << "Primitive \"" << primName << "\" not found!" << std::endl;
+		return 0;
+	}
+
+	return prim->second.first;
+}
+
+GLsizei Renderer::getPrimitiveIndexCount(std::string primName)
+{
+	auto prim = m_mapPrimitives.find(primName);
+
+	if (prim == m_mapPrimitives.end())
+	{
+		std::cerr << "Primitive \"" << primName << "\" not found!" << std::endl;
+		return 0;
+	}
+
+	return prim->second.second;
 }
 
 glm::mat4 Renderer::getBillBoardTransform(const glm::vec3 & pos, const glm::vec3 & at, const glm::vec3 &up, bool lockToUpVector)

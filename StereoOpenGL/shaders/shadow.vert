@@ -85,7 +85,7 @@ void main()
 {
 	vec4 plane;
 	plane.xyz = normalize(vec3(0.f, 1.f, 0.f));
-	plane.w = 2.5f;
+	plane.w = ((length(m4Model[0]) / 2.f) - m4Model[3].y) * 0.999f;
 	mat4 shadowMat = makeShadowMatrix(plane, normalize(-lights[0].direction));
 	gl_Position = m4ViewProjection * shadowMat * m4Model * vec4(v3Position, 1.0);
 }

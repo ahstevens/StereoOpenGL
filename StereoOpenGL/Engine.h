@@ -37,12 +37,9 @@ private:
 
 	void update();
 	void makeScene();
-	void makeDiagram();
 	void render();
 
 	void receive(void* data);
-
-	Renderer::Eye m_Head;
 
 private: // SDL bookkeeping
 	void listDisplayInfo();

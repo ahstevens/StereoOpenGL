@@ -101,11 +101,6 @@ public:
 		glm::vec3 up;
 	};
 
-	struct Eye {
-		glm::vec3 pos;
-		glm::quat rot;
-	};
-
 public:	
 	// Singleton instance access
 	static Renderer& getInstance()
@@ -160,11 +155,14 @@ public:
 	bool drawPrimitive(std::string primName, glm::mat4 modelTransform, std::string diffuseTextureName, std::string specularTextureName, float specularExponent);
 	bool drawPrimitive(std::string primName, glm::mat4 modelTransform, glm::vec4 diffuseColor, glm::vec4 specularColor, float specularExponent);
 	bool drawFlatPrimitive(std::string primName, glm::mat4 modelTransform, glm::vec4 color);
-	bool drawPrimitiveCustom(std::string primName, glm::mat4 modelTransform, std::string shaderName);
+	bool drawPrimitiveCustom(std::string primName, glm::mat4 modelTransform, std::string shaderName, std::string diffuseTexName = "white", glm::vec4 diffuseColor = glm::vec4(1.f));
 	void drawConnector(glm::vec3 from, glm::vec3 to, float thickness, glm::vec4 color);
 	void drawText(std::string text, glm::vec4 color, glm::vec3 pos, glm::quat rot, GLfloat size, TextSizeDim sizeDim, TextAlignment alignment = TextAlignment::CENTER, TextAnchor anchor = TextAnchor::CENTER_MIDDLE, bool snellenFont = false);
 	void drawUIText(std::string text, glm::vec4 color, glm::vec3 pos, glm::quat rot, GLfloat size, TextSizeDim sizeDim, TextAlignment alignment = TextAlignment::CENTER, TextAnchor anchor = TextAnchor::CENTER_MIDDLE);
 	glm::vec2 getTextDimensions(std::string text, float size, TextSizeDim sizeDim);
+
+	GLuint getPrimitiveVAO(std::string primName);
+	GLsizei getPrimitiveIndexCount(std::string primName);
 
 	static glm::mat4 getBillBoardTransform(const glm::vec3 &pos, const glm::vec3 &viewPos, const glm::vec3 &up, bool lockToUpVector);
 
