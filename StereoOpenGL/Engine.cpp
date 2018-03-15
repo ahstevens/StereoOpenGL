@@ -18,14 +18,14 @@
 UntrackedStereoDiagram*			g_pDiagram;
 Hinge*							g_pHinge;
 
-float							g_fEyeSep = 6.3f;
+float							g_fEyeSep = 1.3f;
 glm::vec3						g_vec3HeadPos(0.f, 0.f, 57.f);
 glm::quat						g_qHeadRot(glm::inverse(glm::lookAt(g_vec3HeadPos, glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f))));
-float							g_fDisplayDiag = 13.3f * INTOCM; // physical display diagonal measurement, given in inches, usually
+float							g_fDisplayDiag = 27.f * INTOCM; // physical display diagonal measurement, given in inches, usually
 glm::vec3						g_vec3ScreenPos(0.f, 0.f, 0.f);
 glm::vec3						g_vec3ScreenNormal(0.f, 0.f, 1.f);
 glm::vec3						g_vec3ScreenUp(0.f, 1.f, 0.f);
-bool							g_bStereo = false;
+bool							g_bStereo = true;
 
 WinsockClient*					g_pWSC;
 
@@ -104,6 +104,7 @@ Engine::Engine(int argc, char *argv[], int mode)
 	, m_pMainWindow(NULL)
 	, m_pLeftEyeFramebuffer(NULL)
 	, m_pRightEyeFramebuffer(NULL)
+	, m_bShowDiagnostics(false)
 {
 };
 
@@ -267,13 +268,9 @@ void Engine::receive(void * data)
 		if (eventData[1] == GLFW_KEY_ESCAPE)
 			glfwSetWindowShouldClose(m_pMainWindow, GLFW_TRUE);
 
-		if (eventData[1] == GLFW_KEY_F)
+		if (eventData[1] == GLFW_KEY_D)
 		{
-			std::cout << "Frame Time: " << m_msFrameTime.count() << "ms" << std::endl;
-			std::cout << "\t" << m_msInputHandleTime.count() << "ms\tInput Handling" << std::endl;
-			std::cout << "\t" << m_msUpdateTime.count() << "ms\tState Update" << std::endl;
-			std::cout << "\t" << m_msDrawTime.count() << "ms\tScene Drawing" << std::endl;
-			std::cout << "\t" << m_msRenderTime.count() << "ms\tRendering" << std::endl;
+			m_bShowDiagnostics = !m_bShowDiagnostics;
 		}
 	}
 
@@ -396,60 +393,44 @@ void Engine::makeScene()
 	//Renderer::getInstance().drawPrimitiveCustom("torus", glm::translate(glm::mat4(), glm::vec3(x, y, z)) * glm::rotate(glm::mat4(), glm::radians(angle), glm::vec3(0.f, 1.f, 0.f)), "shadow");
 	//Renderer::getInstance().drawPrimitiveCustom("box", glm::translate(glm::mat4(), glm::vec3(x, y, z)) * glm::rotate(glm::mat4(), glm::radians(-angle), glm::vec3(0.f, 1.f, 0.f)) * glm::scale(glm::mat4(), glm::vec3(0.5f)), "shadow");
 
-	g_pHinge->draw();
-	g_pHinge->drawShadow();
-
-	float sizer = g_fDisplayDiag / sqrt(glm::dot(glm::vec2(m_ivec2MainWindowSize), glm::vec2(m_ivec2MainWindowSize)));
-
-	glm::vec2 screenSize_cm = glm::vec2(m_ivec2MainWindowSize) * sizer;
-
-	Renderer::getInstance().drawPrimitive(
-		"quad",
-		glm::translate(glm::mat4(), glm::vec3(0.f, -screenSize_cm.y / 2.f, -10.f)) * glm::rotate(glm::mat4(), glm::radians(-90.f), glm::vec3(1.f, 0.f, 0.f)) * glm::scale(glm::mat4(), glm::vec3(80.f)),
-		"woodfloor.png",
-		"white",
-		10.f);
-
-	Renderer::getInstance().drawPrimitive(
-		"quad",
-		glm::translate(glm::mat4(), glm::vec3(0.f, 0.f, -50.f)) * glm::scale(glm::mat4(), glm::vec3(70.f)),
-		"wallpaper.png",
-		"white",
-		10.f);
-
-	float cubeSize = 5.f;
-	Renderer::getInstance().drawPrimitive(
-		"cube", 
-		glm::translate(glm::mat4(), glm::vec3(g_pHinge->getLength() * 0.75f, cubeSize / 2.f - screenSize_cm.y / 2.f, -5.f-g_pHinge->getLength())) * glm::scale(glm::mat4(), glm::vec3(cubeSize)),
-		glm::vec4(1.f, 0.f, 0.f, 1.f),
-		glm::vec4(1.f),
-		10.f);
-	Renderer::getInstance().drawPrimitiveCustom(
-		"cube",
-		glm::translate(glm::mat4(), glm::vec3(g_pHinge->getLength() * 0.75f, cubeSize / 2.f - screenSize_cm.y / 2.f, -5.f-g_pHinge->getLength())) * glm::scale(glm::mat4(), glm::vec3(cubeSize)),
-		"shadow");
-
 	//g_pDiagram->draw();
 
-	//Renderer::getInstance().drawPrimitive("bbox", glm::translate(glm::mat4(), -m_Head.pos - (g_vec3ScreenPos + g_vec3ScreenNormal * g_fDisplayDepth * 0.5f)) * glm::scale(glm::mat4(), glm::vec3(0.001f)), glm::vec4(1.f), glm::vec4(1.f), 10.f);
+	g_pHinge->draw();
+	//g_pHinge->drawShadow();
+	//
+	//float sizer = g_fDisplayDiag / sqrt(glm::dot(glm::vec2(m_ivec2MainWindowSize), glm::vec2(m_ivec2MainWindowSize)));
+	//
+	//glm::vec2 screenSize_cm = glm::vec2(m_ivec2MainWindowSize) * sizer;
+	//
+	//Renderer::getInstance().drawPrimitive(
+	//	"quad",
+	//	glm::translate(glm::mat4(), glm::vec3(0.f, -screenSize_cm.y / 2.f, -10.f)) * glm::rotate(glm::mat4(), glm::radians(-90.f), glm::vec3(1.f, 0.f, 0.f)) * glm::scale(glm::mat4(), glm::vec3(80.f)),
+	//	"woodfloor.png",
+	//	"white",
+	//	10.f);
+	//
+	//Renderer::getInstance().drawPrimitive(
+	//	"quad",
+	//	glm::translate(glm::mat4(), glm::vec3(0.f, 0.f, -50.f)) * glm::scale(glm::mat4(), glm::vec3(70.f)),
+	//	"wallpaper.png",
+	//	"white",
+	//	10.f);
+	//
+	//float cubeSize = 5.f;
+	//Renderer::getInstance().drawPrimitive(
+	//	"cube", 
+	//	glm::translate(glm::mat4(), glm::vec3(g_pHinge->getLength() * 0.75f, cubeSize / 2.f - screenSize_cm.y / 2.f, -5.f-g_pHinge->getLength())) * glm::scale(glm::mat4(), glm::vec3(cubeSize)),
+	//	glm::vec4(1.f, 0.f, 0.f, 1.f),
+	//	glm::vec4(1.f),
+	//	10.f);
+	//Renderer::getInstance().drawPrimitiveCustom(
+	//	"cube",
+	//	glm::translate(glm::mat4(), glm::vec3(g_pHinge->getLength() * 0.75f, cubeSize / 2.f - screenSize_cm.y / 2.f, -5.f-g_pHinge->getLength())) * glm::scale(glm::mat4(), glm::vec3(cubeSize)),
+	//	"shadow");
 
-	{
-		std::stringstream ss;
-		ss.precision(2);
 
-		ss << std::fixed << m_msFrameTime.count() << "ms/frame\n" << 1.f / std::chrono::duration_cast<std::chrono::duration<float>>(m_msFrameTime).count() << "fps";
-
-		Renderer::getInstance().drawUIText(
-			ss.str(),
-			glm::vec4(1.f),
-			glm::vec3(m_ivec2MainWindowSize.x, 0.f, 0.f),
-			glm::quat(),
-			40.f,
-			Renderer::HEIGHT,
-			Renderer::RIGHT,
-			Renderer::BOTTOM_RIGHT
-			);
-	}
+	if (m_bShowDiagnostics)
+		drawDiagnostics();
 
 	// MUST be run last to xfer previous debug draw calls to opengl buffers
 	DebugDrawer::getInstance().draw();
@@ -504,6 +485,30 @@ void Engine::listDisplayInfo()
 	}
 }
 
+void Engine::drawDiagnostics()
+{
+	std::stringstream ss;
+	ss.precision(2);
+
+	ss << std::fixed << "Frame Time: " << m_msFrameTime.count() << "ms" << std::endl;
+	ss << "Input Handling" << m_msInputHandleTime.count() << "ms" << std::endl;
+	ss << "State Update" << m_msUpdateTime.count() << "ms" << std::endl;
+	ss << "Scene Drawing" << m_msDrawTime.count() << "ms" << std::endl;
+	ss << "Rendering" << m_msRenderTime.count() << "ms" << std::endl;
+	ss << 1.f / std::chrono::duration_cast<std::chrono::duration<float>>(m_msFrameTime).count() << "fps";
+
+	Renderer::getInstance().drawUIText(
+		ss.str(),
+		glm::vec4(1.f),
+		glm::vec3(m_ivec2MainWindowSize.x, 0.f, 0.f),
+		glm::quat(),
+		120.f,
+		Renderer::HEIGHT,
+		Renderer::RIGHT,
+		Renderer::BOTTOM_RIGHT
+	);
+}
+
 GLFWwindow * Engine::createWindow(GLFWmonitor* monitor, int width, int height, bool stereoContext)
 {
 	bool fullscreen = width == 0 && height == 0;
@@ -522,6 +527,11 @@ GLFWwindow * Engine::createWindow(GLFWmonitor* monitor, int width, int height, b
 	}
 	
 	const GLFWvidmode *mode = glfwGetVideoMode(monitor);
+
+	glfwWindowHint(GLFW_RED_BITS, mode->redBits);
+	glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
+	glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
+	glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
 
 	int w = fullscreen ? mode->width : width;
 	int h = fullscreen ? mode->height : height;

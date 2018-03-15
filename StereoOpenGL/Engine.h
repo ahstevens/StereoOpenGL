@@ -43,11 +43,16 @@ private:
 
 private: // SDL bookkeeping
 	void listDisplayInfo();
+
+	void drawDiagnostics();
+
 	// Use width = height = 0 for a fullscreen window
 	GLFWwindow* createWindow(GLFWmonitor* monitor, int width = 800, int height = 600, bool stereoContext = false);
 
 	GLFWwindow *m_pMainWindow;
 	glm::ivec2 m_ivec2MainWindowSize;
+
+	bool m_bShowDiagnostics;
 
 private: // OpenGL bookkeeping
 	void createMonoView();
