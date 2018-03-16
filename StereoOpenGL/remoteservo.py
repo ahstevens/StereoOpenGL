@@ -62,7 +62,12 @@ try:
                 lcd.lcd_display_string("<Connected>", 3)
 
             while True:
-                data = clientsocket.recv(4096)
+                try:
+                    data = clientsocket.recv(512)
+                except ConnectionResetError:
+                    print("Client connection reset")
+                    break
+                
                 if data:
                     ts = time.localtime(time.time())
                     print("Received data:", data.decode())
