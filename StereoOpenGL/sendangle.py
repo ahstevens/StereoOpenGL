@@ -22,11 +22,11 @@ if len(sys.argv) == 4:
     data = sock.recv(BUF_SIZE)
     print("Response:", data.decode())
 else:
-    angle = input("Angle: ")
-    while int(angle) >= 0:
+    angle = input("Angle(, Time): ")
+    while float(angle.split(',')[0]) >= -90:
         sock.send(angle.encode())
         data = sock.recv(BUF_SIZE)
         print("Response:", data.decode())
-        angle = input("Angle: ")
+        angle = input("Angle(, Time): ")
 
-sock.close
+sock.close()
