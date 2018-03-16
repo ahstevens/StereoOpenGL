@@ -165,6 +165,7 @@
   <ItemGroup>
     <ClCompile Include="..\shared\lodepng.cpp" />
     <ClCompile Include="..\shared\pathtools.cpp" />
+    <ClCompile Include="DataLogger.cpp" />
     <ClCompile Include="Hinge.cpp" />
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="GLFWInputBroadcaster.cpp" />
@@ -173,12 +174,14 @@
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="shaderset.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="StudyInterface.cpp" />
     <ClCompile Include="UntrackedStereoDiagram.cpp" />
     <ClCompile Include="WinsockClient.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\shared\lodepng.h" />
     <ClInclude Include="..\shared\pathtools.h" />
+    <ClInclude Include="DataLogger.h" />
     <ClInclude Include="Hinge.h" />
     <ClInclude Include="Engine.h" />
     <ClInclude Include="DebugDrawer.h" />
@@ -188,12 +191,14 @@
     <ClInclude Include="LightingSystem.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="shaderset.h" />
+    <ClInclude Include="StudyInterface.h" />
     <ClInclude Include="UntrackedStereoDiagram.h" />
     <ClInclude Include="WinsockClient.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="shaders\grid.frag" />
     <None Include="shaders\grid.vert" />
+    <None Include="shaders\gridflat.frag" />
+    <None Include="shaders\gridlighting.frag" />
     <None Include="shaders\shadow.frag" />
     <None Include="shaders\shadow.vert" />
     <None Include="shaders\windowtexture.frag" />

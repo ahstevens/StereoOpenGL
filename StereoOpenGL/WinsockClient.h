@@ -10,7 +10,7 @@ public:
 	WinsockClient();
 	~WinsockClient();
 
-	bool connect(std::string server);
+	bool connect(std::string server, int port);
 	bool disconnect();
 	bool send(std::string msg);
 

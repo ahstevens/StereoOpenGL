@@ -5,6 +5,7 @@
 #include "UntrackedStereoDiagram.h"
 #include "Hinge.h"
 #include "WinsockClient.h"
+#include "DataLogger.h"
 
 #include <fstream>
 #include <sstream>
@@ -28,6 +29,8 @@ glm::vec3						g_vec3ScreenUp(0.f, 1.f, 0.f);
 bool							g_bStereo = true;
 
 WinsockClient*					g_pWSC;
+
+DataLogger*						g_pDataLogger;
 
 //-----------------------------------------------------------------------------
 // Purpose: OpenGL Debug Callback Function
@@ -105,6 +108,7 @@ Engine::Engine(int argc, char *argv[], int mode)
 	, m_pLeftEyeFramebuffer(NULL)
 	, m_pRightEyeFramebuffer(NULL)
 	, m_bShowDiagnostics(false)
+	, m_bStudyMode(false)
 {
 };
 
@@ -172,7 +176,7 @@ bool Engine::init()
 	g_pHinge = new Hinge(screenSize_cm.y, 90.f);
 
 	g_pWSC = new WinsockClient();
-
+	
 	Renderer::getInstance().addTexture(new GLTexture("woodfloor.png", false));
 	Renderer::getInstance().addTexture(new GLTexture("wallpaper.png", false));
 
@@ -309,9 +313,11 @@ void Engine::receive(void * data)
 			g_pDiagram->setProjectionAngle(g_pDiagram->getProjectionAngle() + 1.f);
 
 		if (eventData[1] == GLFW_KEY_C)
-			g_pWSC->connect("localhost");
+			g_pWSC->connect("192.168.137.210", 5005);
 		if (eventData[1] == GLFW_KEY_T)
-			g_pWSC->send("Hello, world!");
+			g_pWSC->send("10,2");
+		if (eventData[1] == GLFW_KEY_Y)
+			g_pWSC->send("-10,2");
 	}
 }
 
@@ -491,18 +497,20 @@ void Engine::drawDiagnostics()
 	ss.precision(2);
 
 	ss << std::fixed << "Frame Time: " << m_msFrameTime.count() << "ms" << std::endl;
-	ss << "Input Handling" << m_msInputHandleTime.count() << "ms" << std::endl;
-	ss << "State Update" << m_msUpdateTime.count() << "ms" << std::endl;
-	ss << "Scene Drawing" << m_msDrawTime.count() << "ms" << std::endl;
-	ss << "Rendering" << m_msRenderTime.count() << "ms" << std::endl;
-	ss << 1.f / std::chrono::duration_cast<std::chrono::duration<float>>(m_msFrameTime).count() << "fps";
+	ss << "Input Handling: " << m_msInputHandleTime.count() << "ms" << std::endl;
+	ss << "State Update: " << m_msUpdateTime.count() << "ms" << std::endl;
+	ss << "Scene Drawing: " << m_msDrawTime.count() << "ms" << std::endl;
+	ss << "Rendering: " << m_msRenderTime.count() << "ms" << std::endl;
+	ss << 1.f / std::chrono::duration_cast<std::chrono::duration<float>>(m_msFrameTime).count() << "fps" << std::endl;
+	ss << std::endl;
+	ss << "Angle: " << g_pHinge->getAngle();
 
 	Renderer::getInstance().drawUIText(
 		ss.str(),
 		glm::vec4(1.f),
 		glm::vec3(m_ivec2MainWindowSize.x, 0.f, 0.f),
 		glm::quat(),
-		120.f,
+		180.f,
 		Renderer::HEIGHT,
 		Renderer::RIGHT,
 		Renderer::BOTTOM_RIGHT

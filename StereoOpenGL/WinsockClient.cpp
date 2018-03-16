@@ -15,7 +15,7 @@
 
 
 #define DEFAULT_BUFLEN 512
-#define DEFAULT_PORT "5005"
+#define DEFAULT_PORT 5005
 
 
 WinsockClient::WinsockClient()
@@ -29,7 +29,7 @@ WinsockClient::~WinsockClient()
 {
 }
 
-bool WinsockClient::connect(std::string server)
+bool WinsockClient::connect(std::string server, int port = DEFAULT_PORT)
 {
 	WSADATA wsaData;
 	struct addrinfo *result = NULL,
@@ -49,7 +49,7 @@ bool WinsockClient::connect(std::string server)
 	hints.ai_protocol = IPPROTO_TCP;
 
 	// Resolve the server address and port
-	iResult = getaddrinfo(server.c_str(), DEFAULT_PORT, &hints, &result);
+	iResult = getaddrinfo(server.c_str(), std::to_string(port).c_str(), &hints, &result);
 	if (iResult != 0) {
 		printf("getaddrinfo failed with error: %d\n", iResult);
 		WSACleanup();

@@ -34,32 +34,11 @@ private:
 	std::chrono::duration<double, std::milli> m_msFrameTime, m_msInputHandleTime, m_msUpdateTime, m_msVRUpdateTime, m_msDrawTime, m_msRenderTime;
 
 	bool m_bGLInitialized;
-
-	void update();
-	void makeScene();
-	void render();
-
-	void receive(void* data);
-
-private: // SDL bookkeeping
-	void listDisplayInfo();
-
-	void drawDiagnostics();
-
-	// Use width = height = 0 for a fullscreen window
-	GLFWwindow* createWindow(GLFWmonitor* monitor, int width = 800, int height = 600, bool stereoContext = false);
+	bool m_bShowDiagnostics;
+	bool m_bStudyMode;
 
 	GLFWwindow *m_pMainWindow;
 	glm::ivec2 m_ivec2MainWindowSize;
-
-	bool m_bShowDiagnostics;
-
-private: // OpenGL bookkeeping
-	void createMonoView();
-	void createStereoViews();
-	void createUIView();
-
-	glm::mat4 getViewingFrustum(glm::vec3 eyePos, glm::vec3 screenCenter, glm::vec3 screenNormal, glm::vec3 screenUp, glm::vec2 screenSize);
 
 	Renderer::FramebufferDesc *m_pMonoFramebuffer;
 	Renderer::FramebufferDesc *m_pLeftEyeFramebuffer;
@@ -69,4 +48,23 @@ private: // OpenGL bookkeeping
 	Renderer::SceneViewInfo m_sviLeftEyeInfo;
 	Renderer::SceneViewInfo m_sviRightEyeInfo;
 	Renderer::SceneViewInfo m_sviUIInfo;
+
+private:
+	void listDisplayInfo();
+	void drawDiagnostics();
+
+	// Use width = height = 0 for a fullscreen window
+	GLFWwindow* createWindow(GLFWmonitor* monitor, int width = 800, int height = 600, bool stereoContext = false);
+
+	void update();
+	void makeScene();
+	void render();
+
+	void receive(void* data);
+
+	void createMonoView();
+	void createStereoViews();
+	void createUIView();
+
+	glm::mat4 getViewingFrustum(glm::vec3 eyePos, glm::vec3 screenCenter, glm::vec3 screenNormal, glm::vec3 screenUp, glm::vec2 screenSize);	
 };
