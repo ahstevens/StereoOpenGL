@@ -2,7 +2,7 @@
 #include <vector>
 #include <algorithm>
 
-#include <GLFW/glfw3.h>
+class GLFWwindow;
 
 class GLFWInputObserver
 {

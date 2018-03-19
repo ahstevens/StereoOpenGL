@@ -4,8 +4,7 @@
 #include "DebugDrawer.h"
 #include "UntrackedStereoDiagram.h"
 #include "Hinge.h"
-#include "WinsockClient.h"
-#include "DataLogger.h"
+#include "StudyInterface.h"
 
 #include <fstream>
 #include <sstream>
@@ -19,18 +18,16 @@
 UntrackedStereoDiagram*			g_pDiagram;
 Hinge*							g_pHinge;
 
-float							g_fEyeSep = 1.3f;
+float							g_fEyeSep = 6.7f;
 glm::vec3						g_vec3HeadPos(0.f, 0.f, 57.f);
 glm::quat						g_qHeadRot(glm::inverse(glm::lookAt(g_vec3HeadPos, glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f))));
 float							g_fDisplayDiag = 27.f * INTOCM; // physical display diagonal measurement, given in inches, usually
 glm::vec3						g_vec3ScreenPos(0.f, 0.f, 0.f);
 glm::vec3						g_vec3ScreenNormal(0.f, 0.f, 1.f);
 glm::vec3						g_vec3ScreenUp(0.f, 1.f, 0.f);
-bool							g_bStereo = true;
+bool							g_bStereo = false;
 
-WinsockClient*					g_pWSC;
-
-DataLogger*						g_pDataLogger;
+StudyInterface*					g_pStudyInterface = NULL;
 
 //-----------------------------------------------------------------------------
 // Purpose: OpenGL Debug Callback Function
@@ -137,7 +134,7 @@ bool Engine::init()
 
 	listDisplayInfo();
 
-	if (!(m_pMainWindow = createWindow(glfwGetPrimaryMonitor(), 0, 0, g_bStereo)))
+	if (!(m_pMainWindow = createWindow(glfwGetPrimaryMonitor(), 500, 500, g_bStereo)))
 	{
 		dprintf("%s - Window could not be created!\n", __FUNCTION__);
 		return false;
@@ -175,10 +172,13 @@ bool Engine::init()
 	g_pDiagram = new UntrackedStereoDiagram(screenTrans, m_ivec2MainWindowSize);
 	g_pHinge = new Hinge(screenSize_cm.y, 90.f);
 
-	g_pWSC = new WinsockClient();
-	
 	Renderer::getInstance().addTexture(new GLTexture("woodfloor.png", false));
 	Renderer::getInstance().addTexture(new GLTexture("wallpaper.png", false));
+
+	g_pStudyInterface = new StudyInterface();
+	g_pStudyInterface->init();
+	GLFWInputBroadcaster::getInstance().addObserver(g_pStudyInterface);
+
 
 	createUIView();
 	createMonoView();
@@ -312,12 +312,6 @@ void Engine::receive(void * data)
 		if (eventData[1] == GLFW_KEY_PERIOD)
 			g_pDiagram->setProjectionAngle(g_pDiagram->getProjectionAngle() + 1.f);
 
-		if (eventData[1] == GLFW_KEY_C)
-			g_pWSC->connect("192.168.137.210", 5005);
-		if (eventData[1] == GLFW_KEY_T)
-			g_pWSC->send("10,2");
-		if (eventData[1] == GLFW_KEY_Y)
-			g_pWSC->send("-10,2");
 	}
 }
 
@@ -364,6 +358,8 @@ void Engine::update()
 	float width_cm = m_ivec2MainWindowSize.x * sizer;
 	float height_cm = m_ivec2MainWindowSize.y * sizer;
 
+	g_pStudyInterface->update();
+
 	if (g_bStereo)
 	{
 		// Update eye positions using current head position
@@ -382,6 +378,7 @@ void Engine::update()
 		g_qHeadRot = glm::inverse(m_sviMonoInfo.view);
 		m_sviMonoInfo.projection = getViewingFrustum(g_vec3HeadPos, g_vec3ScreenPos, g_vec3ScreenNormal, g_vec3ScreenUp, glm::vec2(width_cm, height_cm));
 	}
+
 }
 
 void Engine::makeScene()
@@ -433,6 +430,8 @@ void Engine::makeScene()
 	//	"cube",
 	//	glm::translate(glm::mat4(), glm::vec3(g_pHinge->getLength() * 0.75f, cubeSize / 2.f - screenSize_cm.y / 2.f, -5.f-g_pHinge->getLength())) * glm::scale(glm::mat4(), glm::vec3(cubeSize)),
 	//	"shadow");
+
+	g_pStudyInterface->draw();
 
 
 	if (m_bShowDiagnostics)
