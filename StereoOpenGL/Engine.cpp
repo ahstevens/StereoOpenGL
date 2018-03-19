@@ -18,14 +18,11 @@
 UntrackedStereoDiagram*			g_pDiagram;
 Hinge*							g_pHinge;
 
-float							g_fEyeSep = 6.7f;
-glm::vec3						g_vec3HeadPos(0.f, 0.f, 57.f);
-glm::quat						g_qHeadRot(glm::inverse(glm::lookAt(g_vec3HeadPos, glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f))));
 float							g_fDisplayDiag = 27.f * INTOCM; // physical display diagonal measurement, given in inches, usually
 glm::vec3						g_vec3ScreenPos(0.f, 0.f, 0.f);
 glm::vec3						g_vec3ScreenNormal(0.f, 0.f, 1.f);
 glm::vec3						g_vec3ScreenUp(0.f, 1.f, 0.f);
-bool							g_bStereo = false;
+bool							g_bStereo = true;
 
 StudyInterface*					g_pStudyInterface = NULL;
 
@@ -134,7 +131,7 @@ bool Engine::init()
 
 	listDisplayInfo();
 
-	if (!(m_pMainWindow = createWindow(glfwGetPrimaryMonitor(), 500, 500, g_bStereo)))
+	if (!(m_pMainWindow = createWindow(glfwGetPrimaryMonitor(), 0, 0, g_bStereo)))
 	{
 		dprintf("%s - Window could not be created!\n", __FUNCTION__);
 		return false;
@@ -176,7 +173,7 @@ bool Engine::init()
 	Renderer::getInstance().addTexture(new GLTexture("wallpaper.png", false));
 
 	g_pStudyInterface = new StudyInterface();
-	g_pStudyInterface->init();
+	g_pStudyInterface->init(m_ivec2MainWindowSize);
 	GLFWInputBroadcaster::getInstance().addObserver(g_pStudyInterface);
 
 
@@ -281,12 +278,7 @@ void Engine::receive(void * data)
 	if (eventData[0] == GLFWInputBroadcaster::EVENT::KEY_DOWN || eventData[0] == GLFWInputBroadcaster::EVENT::KEY_HOLD)
 	{
 		float delta = 5.f;
-
-		if (eventData[1] == GLFW_KEY_LEFT)
-			g_vec3HeadPos -= glm::vec3(1.f, 0.f, 0.f) * delta;
-		if (eventData[1] == GLFW_KEY_RIGHT)
-			g_vec3HeadPos += glm::vec3(1.f, 0.f, 0.f) * delta;
-
+		
 		if (eventData[1] == GLFW_KEY_UP)
 			g_pHinge->setAngle(g_pHinge->getAngle() + delta);
 		if (eventData[1] == GLFW_KEY_DOWN)
@@ -360,11 +352,18 @@ void Engine::update()
 
 	g_pStudyInterface->update();
 
+
+
 	if (g_bStereo)
 	{
+		glm::vec3 COP = g_pStudyInterface->getCOP();
+		glm::quat COPRot = glm::inverse(glm::lookAt(COP, glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f)));
+		glm::vec3 COPRight = glm::normalize(glm::mat3_cast(COPRot)[0]);
+		glm::vec3 COPOffset = COPRight * g_pStudyInterface->getEyeSep() * 0.5f;
+
 		// Update eye positions using current head position
-		glm::vec3 leftEyePos = g_vec3HeadPos - glm::normalize(glm::mat3_cast(g_qHeadRot)[0]) * g_fEyeSep * 0.5f;
-		glm::vec3 rightEyePos = g_vec3HeadPos + glm::normalize(glm::mat3_cast(g_qHeadRot)[0]) * g_fEyeSep * 0.5f;
+		glm::vec3 leftEyePos = COP - COPOffset;
+		glm::vec3 rightEyePos = COP + COPOffset;
 
 		m_sviLeftEyeInfo.view = glm::translate(glm::mat4(), -leftEyePos);
 		m_sviLeftEyeInfo.projection = getViewingFrustum(leftEyePos, g_vec3ScreenPos, g_vec3ScreenNormal, g_vec3ScreenUp, glm::vec2(width_cm, height_cm));
@@ -374,9 +373,8 @@ void Engine::update()
 	}
 	else
 	{
-		m_sviMonoInfo.view = glm::translate(glm::mat4(), -g_vec3HeadPos);
-		g_qHeadRot = glm::inverse(m_sviMonoInfo.view);
-		m_sviMonoInfo.projection = getViewingFrustum(g_vec3HeadPos, g_vec3ScreenPos, g_vec3ScreenNormal, g_vec3ScreenUp, glm::vec2(width_cm, height_cm));
+		m_sviMonoInfo.view = glm::translate(glm::mat4(), -g_pStudyInterface->getCOP());
+		m_sviMonoInfo.projection = getViewingFrustum(g_pStudyInterface->getCOP(), g_vec3ScreenPos, g_vec3ScreenNormal, g_vec3ScreenUp, glm::vec2(width_cm, height_cm));
 	}
 
 }
@@ -443,7 +441,7 @@ void Engine::makeScene()
 
 void Engine::render()
 {
-	Renderer::getInstance().sortTransparentObjects(g_vec3HeadPos);
+	Renderer::getInstance().sortTransparentObjects(g_pStudyInterface->getCOP());
 
 	if (g_bStereo)
 	{
