@@ -3,7 +3,6 @@
 #include "Engine.h"
 #include "DebugDrawer.h"
 #include "UntrackedStereoDiagram.h"
-#include "Hinge.h"
 #include "StudyInterface.h"
 
 #include <fstream>
@@ -16,13 +15,12 @@
 #define INTOCM 2.54f
 
 UntrackedStereoDiagram*			g_pDiagram;
-Hinge*							g_pHinge;
 
 float							g_fDisplayDiag = 27.f * INTOCM; // physical display diagonal measurement, given in inches, usually
 glm::vec3						g_vec3ScreenPos(0.f, 0.f, 0.f);
 glm::vec3						g_vec3ScreenNormal(0.f, 0.f, 1.f);
 glm::vec3						g_vec3ScreenUp(0.f, 1.f, 0.f);
-bool							g_bStereo = true;
+bool							g_bStereo = false;
 
 StudyInterface*					g_pStudyInterface = NULL;
 
@@ -167,13 +165,12 @@ bool Engine::init()
 	);
 
 	g_pDiagram = new UntrackedStereoDiagram(screenTrans, m_ivec2MainWindowSize);
-	g_pHinge = new Hinge(screenSize_cm.y, 90.f);
 
 	Renderer::getInstance().addTexture(new GLTexture("woodfloor.png", false));
 	Renderer::getInstance().addTexture(new GLTexture("wallpaper.png", false));
 
 	g_pStudyInterface = new StudyInterface();
-	g_pStudyInterface->init(m_ivec2MainWindowSize);
+	g_pStudyInterface->init(m_ivec2MainWindowSize, g_fDisplayDiag);
 	GLFWInputBroadcaster::getInstance().addObserver(g_pStudyInterface);
 
 
@@ -276,14 +273,7 @@ void Engine::receive(void * data)
 	}
 
 	if (eventData[0] == GLFWInputBroadcaster::EVENT::KEY_DOWN || eventData[0] == GLFWInputBroadcaster::EVENT::KEY_HOLD)
-	{
-		float delta = 5.f;
-		
-		if (eventData[1] == GLFW_KEY_UP)
-			g_pHinge->setAngle(g_pHinge->getAngle() + delta);
-		if (eventData[1] == GLFW_KEY_DOWN)
-			g_pHinge->setAngle(g_pHinge->getAngle() - delta);
-
+	{	
 		if (eventData[1] == GLFW_KEY_MINUS)
 			g_pDiagram->setEyeSeparation(g_pDiagram->getEyeSeparation() - 0.1f);
 		if (eventData[1] == GLFW_KEY_EQUAL)
@@ -396,7 +386,6 @@ void Engine::makeScene()
 
 	//g_pDiagram->draw();
 
-	g_pHinge->draw();
 	//g_pHinge->drawShadow();
 	//
 	//float sizer = g_fDisplayDiag / sqrt(glm::dot(glm::vec2(m_ivec2MainWindowSize), glm::vec2(m_ivec2MainWindowSize)));
@@ -430,7 +419,6 @@ void Engine::makeScene()
 	//	"shadow");
 
 	g_pStudyInterface->draw();
-
 
 	if (m_bShowDiagnostics)
 		drawDiagnostics();
@@ -499,8 +487,6 @@ void Engine::drawDiagnostics()
 	ss << "Scene Drawing: " << m_msDrawTime.count() << "ms" << std::endl;
 	ss << "Rendering: " << m_msRenderTime.count() << "ms" << std::endl;
 	ss << 1.f / std::chrono::duration_cast<std::chrono::duration<float>>(m_msFrameTime).count() << "fps" << std::endl;
-	ss << std::endl;
-	ss << "Angle: " << g_pHinge->getAngle();
 
 	Renderer::getInstance().drawUIText(
 		ss.str(),
