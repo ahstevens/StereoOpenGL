@@ -16,6 +16,7 @@ StudyInterface::StudyInterface()
 	, m_bViewDistEntryMode(false)
 	, m_bViewAngleEntryMode(false)
 	, m_bMoveTimeEntryMode(false)
+	, m_bNameEntryMode(false)
 {
 }
 
@@ -54,6 +55,7 @@ void StudyInterface::reset()
 	m_bViewDistEntryMode = false;
 	m_bViewAngleEntryMode = false;
 	m_bMoveTimeEntryMode = false;
+	m_bNameEntryMode = false;
 
 	m_fViewAngle = 0.f;
 	m_fViewDist = 57.f;
@@ -77,6 +79,8 @@ void StudyInterface::reset()
 	m_strViewAngleBuffer = "0";
 	m_strMoveTimeBuffer = "5.0";
 
+	m_strNameBuffer = "no name";
+
 	m_tMoveStart = std::chrono::high_resolution_clock::time_point();
 }
 
@@ -84,7 +88,7 @@ void StudyInterface::update()
 {
 	using clock = std::chrono::high_resolution_clock;
 	auto tick = clock::now();
-	float elapsed = std::chrono::duration_cast<std::chrono::seconds>(clock::now() - m_tMoveStart).count();
+	float elapsed = std::chrono::duration<float>(clock::now() - m_tMoveStart).count();
 
 	if (elapsed < m_fMoveTime)
 	{
@@ -184,6 +188,28 @@ void StudyInterface::draw()
 			Renderer::BOTTOM_LEFT
 		);
 	}
+
+	if (m_bNameEntryMode)
+	{
+		Renderer::getInstance().drawUIText(
+			"Name: " + m_strNameBuffer + "_",
+			glm::vec4(1.f),
+			glm::vec3(0.f),
+			glm::quat(),
+			100.f,
+			Renderer::HEIGHT,
+			Renderer::LEFT,
+			Renderer::BOTTOM_LEFT
+		);
+	}
+}
+
+void StudyInterface::begin()
+{
+}
+
+void StudyInterface::end()
+{
 }
 
 glm::vec3 StudyInterface::getCOP()
@@ -215,6 +241,7 @@ void StudyInterface::receive(void * data)
 			m_bViewDistEntryMode = false;
 			m_bViewAngleEntryMode = false;
 			m_bMoveTimeEntryMode = false;
+			m_bNameEntryMode = false;
 		}
 
 		if (eventData[1] == GLFW_KEY_F2 && m_bPortEntryMode == false)
@@ -225,6 +252,7 @@ void StudyInterface::receive(void * data)
 			m_bViewDistEntryMode = false;
 			m_bViewAngleEntryMode = false;
 			m_bMoveTimeEntryMode = false;
+			m_bNameEntryMode = false;
 		}
 
 		if (eventData[1] == GLFW_KEY_F3 && m_bEyeSepEntryMode == false)
@@ -235,6 +263,7 @@ void StudyInterface::receive(void * data)
 			m_bViewDistEntryMode = false;
 			m_bViewAngleEntryMode = false;
 			m_bMoveTimeEntryMode = false;
+			m_bNameEntryMode = false;
 		}
 
 		if (eventData[1] == GLFW_KEY_F4 && m_bViewDistEntryMode == false)
@@ -245,6 +274,7 @@ void StudyInterface::receive(void * data)
 			m_bEyeSepEntryMode = false;
 			m_bViewAngleEntryMode = false;
 			m_bMoveTimeEntryMode = false;
+			m_bNameEntryMode = false;
 		}
 
 		if (eventData[1] == GLFW_KEY_F5 && m_bViewAngleEntryMode == false)
@@ -255,11 +285,23 @@ void StudyInterface::receive(void * data)
 			m_bEyeSepEntryMode = false;
 			m_bViewDistEntryMode = false;
 			m_bMoveTimeEntryMode = false;
+			m_bNameEntryMode = false;
 		}
 
 		if (eventData[1] == GLFW_KEY_F6 && m_bMoveTimeEntryMode == false)
 		{
 			m_bMoveTimeEntryMode = true;
+			m_bAddressEntryMode = false;
+			m_bPortEntryMode = false;
+			m_bEyeSepEntryMode = false;
+			m_bViewAngleEntryMode = false;
+			m_bViewDistEntryMode = false;
+			m_bNameEntryMode = false;
+		}
+
+		if (eventData[1] == GLFW_KEY_F7 && m_bNameEntryMode == false)
+		{
+			m_bNameEntryMode = true;
 			m_bAddressEntryMode = false;
 			m_bPortEntryMode = false;
 			m_bEyeSepEntryMode = false;
@@ -326,7 +368,7 @@ void StudyInterface::receive(void * data)
 			if (eventData[1] == GLFW_KEY_ENTER && m_strViewDistBuffer.length() > 0)
 			{
 				m_bViewDistEntryMode = false;
-				m_fViewDist = std::stof(m_strViewDistBuffer);
+				m_fViewDist = m_fCOPDist = std::stof(m_strViewDistBuffer);
 			}
 		}
 
@@ -354,7 +396,15 @@ void StudyInterface::receive(void * data)
 				m_bViewAngleEntryMode = false;
 				m_fLastAngle = m_fViewAngle;
 				m_fViewAngle = std::stof(m_strViewAngleBuffer);
-				m_pSocket->send(m_strViewAngleBuffer + "," + std::to_string(m_fMoveTime));
+
+				// The display angle should be the negative of the viewing angle since our viewpoint is fixed
+				std::string commandAngle = m_strViewAngleBuffer;
+				if (commandAngle[0] == '-')
+					commandAngle.erase(0, 1);
+				else
+					commandAngle.insert(0, 1, '-');
+
+				m_pSocket->send(commandAngle + "," + std::to_string(m_fMoveTime));
 				m_tMoveStart = std::chrono::high_resolution_clock::now();
 			}
 		}
@@ -377,11 +427,26 @@ void StudyInterface::receive(void * data)
 			}
 		}
 
+		if (m_bNameEntryMode)
+		{
+			if (eventData[1] >= GLFW_KEY_A && eventData[1] <= GLFW_KEY_Z)
+				m_strNameBuffer += glfwGetKeyName(eventData[1], 0);
+
+			if (eventData[1] == GLFW_KEY_BACKSPACE && m_strNameBuffer.length() > 0)
+				m_strNameBuffer.pop_back();
+
+			if (eventData[1] == GLFW_KEY_ENTER && m_strNameBuffer.length() > 0)
+			{
+				m_bNameEntryMode = false;
+				DataLogger::getInstance().setID(m_strNameBuffer);
+			}
+		}
+
 		if (eventData[1] == GLFW_KEY_C && m_strAddressBuffer.length() > 0 && m_strPortBuffer.length() > 0)
 			if (m_pSocket->connect(m_strAddressBuffer, std::stoi(m_strPortBuffer)))
 				m_pSocket->send("0,2.5");			
 		
-		if (eventData[1] == GLFW_KEY_R)
+		if (eventData[1] == GLFW_KEY_R && !m_bNameEntryMode)
 			reset();
 	}
 

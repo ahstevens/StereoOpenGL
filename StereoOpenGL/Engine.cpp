@@ -20,7 +20,7 @@ float							g_fDisplayDiag = 27.f * INTOCM; // physical display diagonal measure
 glm::vec3						g_vec3ScreenPos(0.f, 0.f, 0.f);
 glm::vec3						g_vec3ScreenNormal(0.f, 0.f, 1.f);
 glm::vec3						g_vec3ScreenUp(0.f, 1.f, 0.f);
-bool							g_bStereo = false;
+bool							g_bStereo = true;
 
 StudyInterface*					g_pStudyInterface = NULL;
 
@@ -343,7 +343,6 @@ void Engine::update()
 	g_pStudyInterface->update();
 
 
-
 	if (g_bStereo)
 	{
 		glm::vec3 COP = g_pStudyInterface->getCOP();
@@ -459,6 +458,7 @@ void Engine::listDisplayInfo()
 
 	for (int i = 0; i < ndisp; ++i)
 	{
+
 		const std::string displayName(glfwGetMonitorName(monitors[i]));
 
 		int wmm, hmm, x, y;

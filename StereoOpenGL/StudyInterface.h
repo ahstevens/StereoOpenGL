@@ -21,6 +21,9 @@ public:
 
 	void draw();
 
+	void begin();
+	void end();
+
 	glm::vec3 getCOP();
 	float getEyeSep();
 
@@ -37,6 +40,7 @@ private:
 	bool m_bViewDistEntryMode;
 	bool m_bViewAngleEntryMode;
 	bool m_bMoveTimeEntryMode;
+	bool m_bNameEntryMode;
 
 	float m_fCOPDist;
 	float m_fCOPAngle;
@@ -60,6 +64,7 @@ private:
 	std::string m_strViewDistBuffer;
 	std::string m_strViewAngleBuffer;
 	std::string m_strMoveTimeBuffer;
+	std::string m_strNameBuffer;
 
 private:
 	void receive(void* data);
