@@ -31,6 +31,9 @@ WinsockClient::~WinsockClient()
 
 bool WinsockClient::connect(std::string server, int port = DEFAULT_PORT)
 {
+	if (m_Socket != INVALID_SOCKET)
+		disconnect();
+
 	WSADATA wsaData;
 	struct addrinfo *result = NULL,
 		*ptr = NULL,
