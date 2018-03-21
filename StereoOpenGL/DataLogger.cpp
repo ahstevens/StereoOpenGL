@@ -9,12 +9,15 @@ using namespace std::experimental::filesystem::v1;
 
 void DataLogger::setLogDirectory(std::string dir)
 {
+	if (dir.back() != '//')
+		dir += '//';
+
 	m_LogDirectory = current_path().append(dir);
 }
 
 bool DataLogger::openLog(std::string logName, bool appendTimestampToLogname)
 {
-	std::string filename = appendTimestampToLogname ? logName + "_" + getTimeString() : logName;
+	std::string filename = appendTimestampToLogname ? logName + "_" + getTimeString() + ".csv": logName + ".csv";
 	m_fsLog.open(std::string(m_LogDirectory.string() + filename));
 	return m_fsLog.is_open();
 }

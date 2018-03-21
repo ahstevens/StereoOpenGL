@@ -6,6 +6,7 @@
 
 #include <glm.hpp>
 #include <chrono>
+#include <random>
 
 class StudyInterface : public GLFWInputObserver
 {
@@ -22,6 +23,7 @@ public:
 	void draw();
 
 	void begin();
+	void next(bool stimulusDetected);
 	void end();
 
 	glm::vec3 getCOP();
@@ -44,11 +46,16 @@ private:
 
 	bool m_bStudyMode;
 
+	bool m_bLockViewCOP;
+
 	float m_fCOPDist;
 	float m_fCOPAngle;
 	float m_fEyeSep;
 	float m_fViewDist;
 	float m_fViewAngle;
+
+	std::default_random_engine m_Generator;
+	std::uniform_int_distribution<int> m_Distribution;
 
 	float m_fStepSize;
 	float m_fMinStep;
@@ -56,9 +63,18 @@ private:
 	std::vector<float> m_vfAngleConditions;
 	std::vector<float> m_vfDistanceConditions;
 
+	std::vector<std::tuple<float, float, int>> m_vExperimentConditions; // <view angle, view distance, hinge start angle>
+
+	bool m_bStaircaseAscending;
+	int m_nReversals;
+
+	float m_fBlankTime;
+	std::chrono::high_resolution_clock::time_point m_tBlankStart;
+
 	float m_fMoveTime;
 	std::chrono::high_resolution_clock::time_point m_tMoveStart;
 	float m_fLastAngle;
+	float m_fTargetAngle;
 
 	std::string m_strAddressBuffer;
 	std::string m_strPortBuffer;

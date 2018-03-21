@@ -18,6 +18,8 @@ StudyInterface::StudyInterface()
 	, m_bMoveTimeEntryMode(false)
 	, m_bNameEntryMode(false)
 	, m_bStudyMode(false)
+	, m_bLockViewCOP(false)
+	, m_Distribution(std::uniform_int_distribution<int>(10, 20))
 {
 }
 
@@ -60,6 +62,10 @@ void StudyInterface::reset()
 	m_bMoveTimeEntryMode = false;
 	m_bNameEntryMode = false;
 
+	m_bStudyMode = false;
+
+	m_bLockViewCOP = false;
+
 	m_fViewAngle = 0.f;
 	m_fViewDist = 57.f;
 	m_fEyeSep = 6.7;
@@ -70,10 +76,18 @@ void StudyInterface::reset()
 	m_fMinStep = 2.f;
 	m_fStepSize = m_fMinStep;
 
+	m_vExperimentConditions.clear();
+
 	m_vfAngleConditions = { 0.f, 10.f, 30.f, 60.f };
 	m_vfDistanceConditions = { 1.f, 0.5f, 2.f };
 
+	m_fBlankTime = 1.5f;
+	m_tBlankStart = std::chrono::high_resolution_clock::time_point();
+
 	m_fMoveTime = 5.f;
+	m_tMoveStart = std::chrono::high_resolution_clock::time_point();
+
+	m_fLastAngle = m_fTargetAngle = 0.f;
 
 	m_strAddressBuffer = "192.168.";
 	m_strPortBuffer = "5005";
@@ -84,25 +98,29 @@ void StudyInterface::reset()
 
 	m_strNameBuffer = "no name";
 
-	m_tMoveStart = std::chrono::high_resolution_clock::time_point();
 }
 
 void StudyInterface::update()
 {
 	using clock = std::chrono::high_resolution_clock;
 	auto tick = clock::now();
+
 	float elapsed = std::chrono::duration<float>(clock::now() - m_tMoveStart).count();
 
-	if (elapsed < m_fMoveTime)
-	{
-		float ratio = elapsed / m_fMoveTime;
-		m_fCOPAngle = m_fLastAngle + (m_fViewAngle - m_fLastAngle) * ratio;
-	}
-	else
-	{
-		m_fCOPAngle = m_fViewAngle;
+	if (elapsed > 0.f)
+	{	
+		if (elapsed < m_fMoveTime)
+		{
+			float ratio = elapsed / m_fMoveTime;
+			m_fViewAngle = m_fLastAngle + (m_fTargetAngle - m_fLastAngle) * ratio;
+		}
+		else
+		{
+			m_fViewAngle = m_fTargetAngle;
+		}
 	}
 }
+
 
 void StudyInterface::draw()
 {
@@ -209,15 +227,106 @@ void StudyInterface::draw()
 
 void StudyInterface::begin()
 {
+	for (auto a : m_vfAngleConditions)
+		for (auto d : m_vfDistanceConditions)
+			m_vExperimentConditions.push_back(std::tuple<float, float, int>(a, d, m_Distribution(m_Generator)));
+
+	std::random_shuffle(m_vExperimentConditions.begin(), m_vExperimentConditions.end());
+
+	m_bStaircaseAscending = true;
+
+	m_bLockViewCOP = false;
+
+	m_pHinge->setAngle(std::get<2>(m_vExperimentConditions.back()));
+
+	std::stringstream ss;
+	ss.precision(1);
+
+	ss << std::fixed << -std::get<0>(m_vExperimentConditions.back());
+	m_pSocket->send(ss.str() + "," + std::to_string(m_fMoveTime));
+	m_tMoveStart = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(250);
+
+	DataLogger::getInstance().openLog(m_strNameBuffer);
+	DataLogger::getInstance().start();
+}
+
+void StudyInterface::next(bool stimulusDetected)
+{
+	std::string logEntry;
+	logEntry += std::to_string((m_vfAngleConditions.size() * m_vfDistanceConditions.size()) - m_vExperimentConditions.size());
+	logEntry += ",";
+	logEntry += std::to_string(std::get<0>(m_vExperimentConditions.back()));
+	logEntry += ",";
+	logEntry += std::to_string(std::get<1>(m_vExperimentConditions.back()));
+	logEntry += ",";
+	logEntry += std::to_string(std::get<2>(m_vExperimentConditions.back()));
+	logEntry += ",";
+	logEntry += std::to_string(m_pHinge->getAngle());
+	logEntry += ",";
+
+
+	if (stimulusDetected) // perceived as acute
+	{
+		m_pHinge->setAngle(m_pHinge->getAngle() + m_fStepSize);
+
+		logEntry += "acute";
+		logEntry += ",";
+
+		if (!m_bStaircaseAscending)
+		{
+			m_bStaircaseAscending = true;
+			m_nReversals--;
+		}
+	}
+	else // perceived as obtuse
+	{
+		m_pHinge->setAngle(m_pHinge->getAngle() - m_fStepSize);
+
+		logEntry += "obtuse";
+		logEntry += ",";
+
+		if (m_bStaircaseAscending)
+		{
+			m_bStaircaseAscending = false;
+			m_nReversals--;
+		}
+	}
+
+	DataLogger::getInstance().logMessage(logEntry);
+
+	if (m_nReversals == 0)
+	{
+		m_nReversals = 10;
+		m_vExperimentConditions.pop_back();
+
+		if (m_vExperimentConditions.size() == 0)
+			end();
+		else
+			m_pHinge->setAngle(std::get<2>(m_vExperimentConditions.back()));
+	}
+
+	std::stringstream ss;
+	ss.precision(1);
+
+	ss << std::fixed << -std::get<0>(m_vExperimentConditions.back());
+	m_pSocket->send(ss.str() + "," + std::to_string(m_fMoveTime));
+	m_tMoveStart = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(250);
 }
 
 void StudyInterface::end()
 {
+	m_bStudyMode = false;
+	DataLogger::getInstance().closeLog();
 }
 
 glm::vec3 StudyInterface::getCOP()
 {
-	return glm::vec3(glm::rotate(glm::mat4(), glm::radians(m_fCOPAngle), glm::vec3(0.f, 1.f, 0.f)) * glm::vec4(0.f, 0.f, m_fCOPDist, 1.f));
+	if (m_bStudyMode)
+		return glm::vec3(glm::rotate(glm::mat4(), glm::radians(m_fCOPAngle), glm::vec3(0.f, 1.f, 0.f)) * glm::vec4(0.f, 0.f, m_fViewDist * std::get<1>(m_vExperimentConditions.back()), 1.f));
+	else if (m_bLockViewCOP)
+		return glm::vec3(glm::rotate(glm::mat4(), glm::radians(m_fViewAngle), glm::vec3(0.f, 1.f, 0.f)) * glm::vec4(0.f, 0.f, m_fViewDist, 1.f));
+	else
+		return glm::vec3(glm::rotate(glm::mat4(), glm::radians(m_fCOPAngle), glm::vec3(0.f, 1.f, 0.f)) * glm::vec4(0.f, 0.f, m_fCOPDist, 1.f));
 }
 
 float StudyInterface::getEyeSep()
@@ -233,9 +342,6 @@ void StudyInterface::receive(void * data)
 
 	if (eventData[0] == GLFWInputBroadcaster::EVENT::KEY_DOWN)
 	{
-		if (eventData[1] == GLFW_KEY_ESCAPE)
-			;
-
 		if (eventData[1] == GLFW_KEY_F1 && m_bAddressEntryMode == false)
 		{
 			m_bAddressEntryMode = true;
@@ -310,6 +416,11 @@ void StudyInterface::receive(void * data)
 			m_bEyeSepEntryMode = false;
 			m_bViewAngleEntryMode = false;
 			m_bViewDistEntryMode = false;
+		}
+
+		if (eventData[1] == GLFW_KEY_F8)
+		{
+			m_bLockViewCOP = !m_bLockViewCOP;
 		}
 
 		if (m_bAddressEntryMode)
@@ -398,7 +509,7 @@ void StudyInterface::receive(void * data)
 			{
 				m_bViewAngleEntryMode = false;
 				m_fLastAngle = m_fViewAngle;
-				m_fViewAngle = std::stof(m_strViewAngleBuffer);
+				m_fTargetAngle = std::stof(m_strViewAngleBuffer);
 
 				// The display angle should be the negative of the viewing angle since our viewpoint is fixed
 				std::string commandAngle = m_strViewAngleBuffer;
@@ -408,7 +519,7 @@ void StudyInterface::receive(void * data)
 					commandAngle.insert(0, 1, '-');
 
 				m_pSocket->send(commandAngle + "," + std::to_string(m_fMoveTime));
-				m_tMoveStart = std::chrono::high_resolution_clock::now();
+				m_tMoveStart = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(250);
 			}
 		}
 
@@ -451,6 +562,18 @@ void StudyInterface::receive(void * data)
 		
 		if (eventData[1] == GLFW_KEY_R && !m_bNameEntryMode)
 			reset();
+
+		if (eventData[1] == GLFW_KEY_HOME && !m_bStudyMode)
+		{
+			m_bStudyMode = true;
+			begin();
+		}
+
+		if (eventData[1] == GLFW_KEY_SPACE && m_bStudyMode)
+			next(true);
+
+		if (eventData[1] == GLFW_KEY_KP_ENTER && m_bStudyMode)
+			next(false);
 	}
 
 	if (eventData[0] == GLFWInputBroadcaster::EVENT::KEY_DOWN || eventData[0] == GLFWInputBroadcaster::EVENT::KEY_HOLD)
