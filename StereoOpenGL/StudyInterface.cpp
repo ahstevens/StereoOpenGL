@@ -17,6 +17,7 @@ StudyInterface::StudyInterface()
 	, m_bViewAngleEntryMode(false)
 	, m_bMoveTimeEntryMode(false)
 	, m_bNameEntryMode(false)
+	, m_bStudyMode(false)
 {
 }
 
@@ -25,11 +26,13 @@ StudyInterface::~StudyInterface()
 {
 	if (m_pSocket)
 		delete m_pSocket;
+
+	if (m_pHinge)
+		delete m_pHinge;
 }
 
 void StudyInterface::init(glm::ivec2 screenDims, float screenDiag)
 {
-	DataLogger::getInstance().setID("drewtest");
 	DataLogger::getInstance().setLogDirectory("logs");
 
 	m_ivec2Screen = screenDims;

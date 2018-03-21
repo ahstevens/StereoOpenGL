@@ -42,6 +42,8 @@ private:
 	bool m_bMoveTimeEntryMode;
 	bool m_bNameEntryMode;
 
+	bool m_bStudyMode;
+
 	float m_fCOPDist;
 	float m_fCOPAngle;
 	float m_fEyeSep;
