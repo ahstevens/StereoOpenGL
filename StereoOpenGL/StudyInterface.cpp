@@ -76,6 +76,8 @@ void StudyInterface::reset()
 	m_fMinStep = 2.f;
 	m_fStepSize = m_fMinStep;
 
+	m_nReversals = 10;
+
 	m_vExperimentConditions.clear();
 
 	m_vfAngleConditions = { 0.f, 10.f, 30.f, 60.f };
@@ -246,6 +248,7 @@ void StudyInterface::begin()
 	m_pSocket->send(ss.str() + "," + std::to_string(m_fMoveTime));
 	m_tMoveStart = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(250);
 
+	DataLogger::getInstance().setID(m_strNameBuffer);
 	DataLogger::getInstance().openLog(m_strNameBuffer);
 	DataLogger::getInstance().start();
 }
