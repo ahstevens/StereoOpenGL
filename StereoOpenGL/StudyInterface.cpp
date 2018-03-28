@@ -19,7 +19,8 @@ StudyInterface::StudyInterface()
 	, m_bNameEntryMode(false)
 	, m_bStudyMode(false)
 	, m_bLockViewCOP(false)
-	, m_Distribution(std::uniform_int_distribution<int>(10, 20))
+	, m_AngleDistribution(std::uniform_int_distribution<int>(10, 20))
+	, m_BoolDistribution(std::uniform_int_distribution<int>(0, 1))
 {
 }
 
@@ -229,9 +230,21 @@ void StudyInterface::draw()
 
 void StudyInterface::begin()
 {
-	for (auto a : m_vfAngleConditions)
-		for (auto d : m_vfDistanceConditions)
-			m_vExperimentConditions.push_back(std::tuple<float, float, int>(a, d, m_Distribution(m_Generator)));
+	//for (auto a : m_vfAngleConditions)
+	//	for (auto d : m_vfDistanceConditions)
+	//	{
+	//		m_vExperimentConditions.push_back(std::tuple<float, float, int>(m_BoolDistribution(m_Generator) ? a : -a, d, 90.f + m_AngleDistribution(m_Generator)));
+	//		m_vExperimentConditions.push_back(std::tuple<float, float, int>(m_BoolDistribution(m_Generator) ? a : -a, d, 90.f - m_AngleDistribution(m_Generator)));
+	//	}
+
+
+	m_vExperimentConditions.push_back(std::tuple<float, float, int, float>(0.f, 1.f, 90.f + m_AngleDistribution(m_Generator), m_vec2Screen.y));
+	m_vExperimentConditions.push_back(std::tuple<float, float, int, float>(0.f, 1.f, 90.f - m_AngleDistribution(m_Generator), m_vec2Screen.y));
+	m_vExperimentConditions.push_back(std::tuple<float, float, int, float>(0.f, 1.f, 90.f + m_AngleDistribution(m_Generator), 5.f));
+	m_vExperimentConditions.push_back(std::tuple<float, float, int, float>(0.f, 1.f, 90.f - m_AngleDistribution(m_Generator), 5.f));
+	m_vExperimentConditions.push_back(std::tuple<float, float, int, float>(0.f, 1.f, 90.f + m_AngleDistribution(m_Generator), 10.f));
+	m_vExperimentConditions.push_back(std::tuple<float, float, int, float>(0.f, 1.f, 90.f - m_AngleDistribution(m_Generator), 10.f));
+		
 
 	std::random_shuffle(m_vExperimentConditions.begin(), m_vExperimentConditions.end());
 
@@ -240,6 +253,7 @@ void StudyInterface::begin()
 	m_bLockViewCOP = false;
 
 	m_pHinge->setAngle(std::get<2>(m_vExperimentConditions.back()));
+	m_pHinge->setLength(std::get<3>(m_vExperimentConditions.back()));
 
 	std::stringstream ss;
 	ss.precision(1);
@@ -263,6 +277,8 @@ void StudyInterface::next(bool stimulusDetected)
 	logEntry += std::to_string(std::get<1>(m_vExperimentConditions.back()));
 	logEntry += ",";
 	logEntry += std::to_string(std::get<2>(m_vExperimentConditions.back()));
+	logEntry += ",";
+	logEntry += std::to_string(std::get<3>(m_vExperimentConditions.back()));
 	logEntry += ",";
 	logEntry += std::to_string(m_pHinge->getAngle());
 	logEntry += ",";
@@ -305,7 +321,10 @@ void StudyInterface::next(bool stimulusDetected)
 		if (m_vExperimentConditions.size() == 0)
 			end();
 		else
+		{
 			m_pHinge->setAngle(std::get<2>(m_vExperimentConditions.back()));
+			m_pHinge->setLength(std::get<3>(m_vExperimentConditions.back()));
+		}
 	}
 
 	std::stringstream ss;

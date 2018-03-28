@@ -335,9 +335,9 @@ void Renderer::setupTextures()
 bool Renderer::CreateFrameBuffer(int nWidth, int nHeight, FramebufferDesc &framebufferDesc)
 {
 	// Create the multisample depth buffer as a render buffer
-	glNamedRenderbufferStorageMultisample(framebufferDesc.m_nDepthBufferId, 4, GL_DEPTH_COMPONENT, nWidth, nHeight);
+	glNamedRenderbufferStorageMultisample(framebufferDesc.m_nDepthBufferId, 16, GL_DEPTH_COMPONENT, nWidth, nHeight);
 	// Allocate render texture storage
-	glTextureStorage2DMultisample(framebufferDesc.m_nRenderTextureId, 4, GL_RGBA8, nWidth, nHeight, true);
+	glTextureStorage2DMultisample(framebufferDesc.m_nRenderTextureId, 16, GL_RGBA8, nWidth, nHeight, true);
 	// Allocate resolve texture storage
 	glTextureStorage2D(framebufferDesc.m_nResolveTextureId, 1, GL_RGBA8, nWidth, nHeight);
 
