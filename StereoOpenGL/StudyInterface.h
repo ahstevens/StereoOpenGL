@@ -55,7 +55,8 @@ private:
 	float m_fViewAngle;
 
 	std::default_random_engine m_Generator;
-	std::uniform_int_distribution<int> m_Distribution;
+	std::uniform_int_distribution<int> m_AngleDistribution;
+	std::uniform_int_distribution<int> m_BoolDistribution;
 
 	float m_fStepSize;
 	float m_fMinStep;
@@ -63,7 +64,7 @@ private:
 	std::vector<float> m_vfAngleConditions;
 	std::vector<float> m_vfDistanceConditions;
 
-	std::vector<std::tuple<float, float, int>> m_vExperimentConditions; // <view angle, view distance, hinge start angle>
+	std::vector<std::tuple<float, float, int, float>> m_vExperimentConditions; // <view angle, view distance, hinge start angle, hinge length>
 
 	bool m_bStaircaseAscending;
 	int m_nReversals;
