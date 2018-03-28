@@ -2,7 +2,7 @@
 #include <vector>
 #include <algorithm>
 
-class GLFWwindow;
+struct GLFWwindow;
 
 class GLFWInputObserver
 {

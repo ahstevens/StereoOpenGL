@@ -64,7 +64,7 @@ private:
 	std::vector<float> m_vfAngleConditions;
 	std::vector<float> m_vfDistanceConditions;
 
-	std::vector<std::tuple<float, float, int, float>> m_vExperimentConditions; // <view angle, view distance, hinge start angle, hinge length>
+	std::vector<std::tuple<float, float, int, float, glm::vec3>> m_vExperimentConditions; // <view angle, view distance, hinge start angle, hinge length, hinge pos>
 
 	bool m_bStaircaseAscending;
 	int m_nReversals;
