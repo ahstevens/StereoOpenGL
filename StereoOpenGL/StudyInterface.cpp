@@ -18,6 +18,7 @@ StudyInterface::StudyInterface()
 	, m_bMoveTimeEntryMode(false)
 	, m_bNameEntryMode(false)
 	, m_bStudyMode(false)
+	, m_bShowStimulus(true)
 	, m_bLockViewCOP(false)
 	, m_Generator(std::random_device()())
 	, m_AngleDistribution(std::uniform_int_distribution<int>(10, 20))
@@ -51,7 +52,7 @@ void StudyInterface::init(glm::ivec2 screenDims, float screenDiag)
 		m_pSocket = new WinsockClient();
 
 	if (m_pHinge == NULL)
-		m_pHinge = new Hinge(m_vec2Screen.y, 90.f);
+		m_pHinge = new Hinge(5.f, 90.f);
 }
 
 void StudyInterface::reset()
@@ -78,15 +79,15 @@ void StudyInterface::reset()
 	m_fMinStep = 2.f;
 	m_fStepSize = m_fMinStep;
 
-	m_nReversals = 10;
+	m_nReversals = 11; // ignore the first
 
 	m_vExperimentConditions.clear();
 
 	m_vfAngleConditions = { 0.f, 10.f, 30.f, 60.f };
 	m_vfDistanceConditions = { 1.f, 0.5f, 2.f };
 
-	m_fBlankTime = 1.5f;
-	m_tBlankStart = std::chrono::high_resolution_clock::time_point();
+	m_fStimulusTime = 1.5f;
+	m_tStimulusStart = std::chrono::high_resolution_clock::time_point();
 
 	m_fMoveTime = 5.f;
 	m_tMoveStart = std::chrono::high_resolution_clock::time_point();
@@ -109,13 +110,14 @@ void StudyInterface::update()
 	using clock = std::chrono::high_resolution_clock;
 	auto tick = clock::now();
 
-	float elapsed = std::chrono::duration<float>(clock::now() - m_tMoveStart).count();
+	float elapsedMove = std::chrono::duration<float>(clock::now() - m_tMoveStart).count();
+	float elapsedStim = std::chrono::duration<float>(clock::now() - m_tStimulusStart).count();
 
-	if (elapsed > 0.f)
+	if (elapsedMove > 0.f)
 	{	
-		if (elapsed < m_fMoveTime)
+		if (elapsedMove < m_fMoveTime)
 		{
-			float ratio = elapsed / m_fMoveTime;
+			float ratio = elapsedMove / m_fMoveTime;
 			m_fViewAngle = m_fLastAngle + (m_fTargetAngle - m_fLastAngle) * ratio;
 		}
 		else
@@ -123,6 +125,15 @@ void StudyInterface::update()
 			m_fViewAngle = m_fTargetAngle;
 		}
 	}
+	if (m_bStudyMode)
+	{
+		if (elapsedMove >= 0.f && elapsedMove <= m_fStimulusTime)
+			m_bShowStimulus = true;
+		else
+			m_bShowStimulus = false;
+	}
+	else
+		m_bShowStimulus = true;
 }
 
 
@@ -271,12 +282,12 @@ void StudyInterface::begin()
 	m_pSocket->send(ss.str() + "," + std::to_string(m_fMoveTime));
 	m_tMoveStart = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(250);
 
-	std::string logHeader("id,trial,view.angle,view.dist,start.angle,hinge.length,hinge.z.pos,hinge.angle,response");
+	m_tStimulusStart = m_tMoveStart + std::chrono::duration<float, std::chrono::seconds>(m_fMoveTime);
 
 	DataLogger::getInstance().setID(m_strNameBuffer);
 	DataLogger::getInstance().openLog(m_strNameBuffer);
+	DataLogger::getInstance().setHeader("trial,view.angle,view.dist,start.angle,hinge.length,hinge.z.pos,hinge.angle,response");
 	DataLogger::getInstance().start(); 
-	DataLogger::getInstance().logMessage(logHeader);
 }
 
 void StudyInterface::next(bool stimulusDetected)
@@ -329,7 +340,7 @@ void StudyInterface::next(bool stimulusDetected)
 
 	if (m_nReversals == 0)
 	{
-		m_nReversals = 10;
+		m_nReversals = 11; // ignore the first
 		m_vExperimentConditions.pop_back();
 
 		if (m_vExperimentConditions.size() == 0)
@@ -348,6 +359,8 @@ void StudyInterface::next(bool stimulusDetected)
 	ss << std::fixed << -std::get<0>(m_vExperimentConditions.back());
 	m_pSocket->send(ss.str() + "," + std::to_string(m_fMoveTime));
 	m_tMoveStart = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(250);
+
+	m_tStimulusStart = m_tMoveStart + std::chrono::duration<float, std::chrono::seconds>(m_fMoveTime);
 }
 
 void StudyInterface::end()

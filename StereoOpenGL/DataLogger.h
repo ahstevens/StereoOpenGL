@@ -26,6 +26,8 @@ public:
 	bool logging();
 
 	void setID(std::string id);
+	// do not include 'id' field, it is added automatically
+	void setHeader(std::string header);
 
 	void logMessage(std::string message);
 
@@ -40,6 +42,7 @@ private:
 	std::ofstream m_fsLog;
 
 	std::string m_strID;
+	std::string m_strHeader;
 
 	std::experimental::filesystem::v1::path m_LogDirectory;
 	std::chrono::time_point<std::chrono::high_resolution_clock> m_tpLogStart;

@@ -35,7 +35,11 @@ void DataLogger::start()
 	m_bLogging = m_fsLog.is_open();
 
 	if (m_bLogging)
+	{
 		m_tpLogStart = std::chrono::high_resolution_clock::now();
+		if (m_strHeader == std::string())
+			m_fsLog << "id," << m_strHeader << "\n";
+	}
 }
 
 void DataLogger::stop()
@@ -51,6 +55,11 @@ bool DataLogger::logging()
 void DataLogger::setID(std::string id)
 {
 	m_strID = id;
+}
+
+void DataLogger::setHeader(std::string header)
+{
+	m_strHeader = header;
 }
 
 void DataLogger::logMessage(std::string message)

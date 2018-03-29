@@ -45,6 +45,7 @@ private:
 	bool m_bNameEntryMode;
 
 	bool m_bStudyMode;
+	bool m_bShowStimulus;
 
 	bool m_bLockViewCOP;
 
@@ -69,8 +70,8 @@ private:
 	bool m_bStaircaseAscending;
 	int m_nReversals;
 
-	float m_fBlankTime;
-	std::chrono::high_resolution_clock::time_point m_tBlankStart;
+	float m_fStimulusTime;
+	std::chrono::high_resolution_clock::time_point m_tStimulusStart;
 
 	float m_fMoveTime;
 	std::chrono::high_resolution_clock::time_point m_tMoveStart;
