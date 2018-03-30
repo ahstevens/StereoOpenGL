@@ -37,7 +37,7 @@ void DataLogger::start()
 	if (m_bLogging)
 	{
 		m_tpLogStart = std::chrono::high_resolution_clock::now();
-		if (m_strHeader == std::string())
+		if (m_strHeader != std::string())
 			m_fsLog << "id," << m_strHeader << "\n";
 	}
 }
