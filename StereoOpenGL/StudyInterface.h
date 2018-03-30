@@ -67,7 +67,7 @@ private:
 
 	std::vector<std::tuple<float, float, int, float, glm::vec3>> m_vExperimentConditions; // <view angle, view distance, hinge start angle, hinge length, hinge pos>
 
-	bool m_bStaircaseAscending;
+	std::string m_strLastResponse;
 	int m_nReversals;
 
 	float m_fStimulusTime;

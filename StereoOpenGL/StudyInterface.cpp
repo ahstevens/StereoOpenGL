@@ -79,6 +79,7 @@ void StudyInterface::reset()
 	m_fMinStep = 2.f;
 	m_fStepSize = m_fMinStep;
 
+	m_strLastResponse = std::string();
 	m_nReversals = 11; // ignore the first
 
 	m_vExperimentConditions.clear();
@@ -245,31 +246,31 @@ void StudyInterface::draw()
 
 void StudyInterface::begin()
 {
-	//for (auto a : m_vfAngleConditions)
-	//	for (auto d : m_vfDistanceConditions)
-	//	{
-	//		m_vExperimentConditions.push_back(std::tuple<float, float, int>(m_BoolDistribution(m_Generator) ? a : -a, d, 90.f + m_AngleDistribution(m_Generator)));
-	//		m_vExperimentConditions.push_back(std::tuple<float, float, int>(m_BoolDistribution(m_Generator) ? a : -a, d, 90.f - m_AngleDistribution(m_Generator)));
-	//	}
+	for (auto a : m_vfAngleConditions)
+		for (auto d : m_vfDistanceConditions)
+		{
+			m_vExperimentConditions.push_back(std::tuple<float, float, int, float, glm::vec3>(m_BoolDistribution(m_Generator) ? a : -a, d, 90.f + m_AngleDistribution(m_Generator), 10.f, glm::vec3(0.f, 0.f, -10.f)));
+			m_vExperimentConditions.push_back(std::tuple<float, float, int, float, glm::vec3>(m_BoolDistribution(m_Generator) ? a : -a, d, 90.f - m_AngleDistribution(m_Generator), 10.f, glm::vec3(0.f, 0.f, -10.f)));
+		}
 
 
-	m_vExperimentConditions.push_back(std::tuple<float, float, int, float, glm::vec3>(0.f, 1.f, 90 + m_AngleDistribution(m_Generator), 5.f, glm::vec3(0.f)));
-	m_vExperimentConditions.push_back(std::tuple<float, float, int, float, glm::vec3>(0.f, 1.f, 90 - m_AngleDistribution(m_Generator), 5.f, glm::vec3(0.f)));
-	m_vExperimentConditions.push_back(std::tuple<float, float, int, float, glm::vec3>(0.f, 1.f, 90 + m_AngleDistribution(m_Generator), 5.f, glm::vec3(0.f, 1.f, -5.f)));
-	m_vExperimentConditions.push_back(std::tuple<float, float, int, float, glm::vec3>(0.f, 1.f, 90 - m_AngleDistribution(m_Generator), 5.f, glm::vec3(0.f, 1.f, -5.f)));
-	m_vExperimentConditions.push_back(std::tuple<float, float, int, float, glm::vec3>(0.f, 1.f, 90 + m_AngleDistribution(m_Generator), 10.f, glm::vec3(0.f)));
-	m_vExperimentConditions.push_back(std::tuple<float, float, int, float, glm::vec3>(0.f, 1.f, 90 - m_AngleDistribution(m_Generator), 10.f, glm::vec3(0.f)));
-	m_vExperimentConditions.push_back(std::tuple<float, float, int, float, glm::vec3>(0.f, 1.f, 90 + m_AngleDistribution(m_Generator), 10.f, glm::vec3(0.f, 1.f, -10.f)));
-	m_vExperimentConditions.push_back(std::tuple<float, float, int, float, glm::vec3>(0.f, 1.f, 90 - m_AngleDistribution(m_Generator), 10.f, glm::vec3(0.f, 1.f, -10.f)));
-	m_vExperimentConditions.push_back(std::tuple<float, float, int, float, glm::vec3>(0.f, 1.f, 90 + m_AngleDistribution(m_Generator), 30.f, glm::vec3(0.f)));
-	m_vExperimentConditions.push_back(std::tuple<float, float, int, float, glm::vec3>(0.f, 1.f, 90 - m_AngleDistribution(m_Generator), 30.f, glm::vec3(0.f)));
-	m_vExperimentConditions.push_back(std::tuple<float, float, int, float, glm::vec3>(0.f, 1.f, 90 + m_AngleDistribution(m_Generator), 30.f, glm::vec3(0.f, 1.f, -30.f)));
-	m_vExperimentConditions.push_back(std::tuple<float, float, int, float, glm::vec3>(0.f, 1.f, 90 - m_AngleDistribution(m_Generator), 30.f, glm::vec3(0.f, 1.f, -30.f)));
+	//m_vExperimentConditions.push_back(std::tuple<float, float, int, float, glm::vec3>(0.f, 1.f, 90 + m_AngleDistribution(m_Generator), 5.f, glm::vec3(0.f)));
+	//m_vExperimentConditions.push_back(std::tuple<float, float, int, float, glm::vec3>(0.f, 1.f, 90 - m_AngleDistribution(m_Generator), 5.f, glm::vec3(0.f)));
+	//m_vExperimentConditions.push_back(std::tuple<float, float, int, float, glm::vec3>(0.f, 1.f, 90 + m_AngleDistribution(m_Generator), 5.f, glm::vec3(0.f, 0.f, -5.f)));
+	//m_vExperimentConditions.push_back(std::tuple<float, float, int, float, glm::vec3>(0.f, 1.f, 90 - m_AngleDistribution(m_Generator), 5.f, glm::vec3(0.f, 0.f, -5.f)));
+	//m_vExperimentConditions.push_back(std::tuple<float, float, int, float, glm::vec3>(0.f, 1.f, 90 + m_AngleDistribution(m_Generator), 10.f, glm::vec3(0.f)));
+	//m_vExperimentConditions.push_back(std::tuple<float, float, int, float, glm::vec3>(0.f, 1.f, 90 - m_AngleDistribution(m_Generator), 10.f, glm::vec3(0.f)));
+	//m_vExperimentConditions.push_back(std::tuple<float, float, int, float, glm::vec3>(0.f, 1.f, 90 + m_AngleDistribution(m_Generator), 10.f, glm::vec3(0.f, 0.f, -10.f)));
+	//m_vExperimentConditions.push_back(std::tuple<float, float, int, float, glm::vec3>(0.f, 1.f, 90 - m_AngleDistribution(m_Generator), 10.f, glm::vec3(0.f, 0.f, -10.f)));
+	//m_vExperimentConditions.push_back(std::tuple<float, float, int, float, glm::vec3>(0.f, 1.f, 90 + m_AngleDistribution(m_Generator), 30.f, glm::vec3(0.f)));
+	//m_vExperimentConditions.push_back(std::tuple<float, float, int, float, glm::vec3>(0.f, 1.f, 90 - m_AngleDistribution(m_Generator), 30.f, glm::vec3(0.f)));
+	//m_vExperimentConditions.push_back(std::tuple<float, float, int, float, glm::vec3>(0.f, 1.f, 90 + m_AngleDistribution(m_Generator), 30.f, glm::vec3(0.f, 0.f, -30.f)));
+	//m_vExperimentConditions.push_back(std::tuple<float, float, int, float, glm::vec3>(0.f, 1.f, 90 - m_AngleDistribution(m_Generator), 30.f, glm::vec3(0.f, 0.f, -30.f)));
 		
 
 	std::random_shuffle(m_vExperimentConditions.begin(), m_vExperimentConditions.end());
 
-	m_bStaircaseAscending = true;
+	m_strLastResponse = std::string();
 
 	m_bLockViewCOP = false;
 
@@ -318,11 +319,10 @@ void StudyInterface::next(bool stimulusDetected)
 		logEntry += "acute";
 		logEntry += ",";
 
-		if (!m_bStaircaseAscending)
-		{
-			m_bStaircaseAscending = true;
-			m_nReversals--;
-		}
+		if (m_strLastResponse.compare("obtuse") == 0)
+			m_nReversals--;		
+
+		m_strLastResponse = "acute";
 	}
 	else // perceived as obtuse
 	{
@@ -331,15 +331,13 @@ void StudyInterface::next(bool stimulusDetected)
 		logEntry += "obtuse";
 		logEntry += ",";
 
-		if (m_bStaircaseAscending)
-		{
-			m_bStaircaseAscending = false;
+		if (m_strLastResponse.compare("acute") == 0)		
 			m_nReversals--;
-		}
+
+		m_strLastResponse = "obtuse";
 	}
 
 	DataLogger::getInstance().logMessage(logEntry);
-
 
 	if (m_nReversals == 0)
 	{
@@ -367,9 +365,6 @@ void StudyInterface::next(bool stimulusDetected)
 	{
 		m_tStimulusStart = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(static_cast<int>(m_fStimulusDelay * 1000.f));
 	}
-
-
-	
 }
 
 void StudyInterface::end()
