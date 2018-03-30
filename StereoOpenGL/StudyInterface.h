@@ -71,6 +71,7 @@ private:
 	int m_nReversals;
 
 	float m_fStimulusTime;
+	float m_fStimulusDelay;
 	std::chrono::high_resolution_clock::time_point m_tStimulusStart;
 
 	float m_fMoveTime;

@@ -87,6 +87,7 @@ void StudyInterface::reset()
 	m_vfDistanceConditions = { 1.f, 0.5f, 2.f };
 
 	m_fStimulusTime = 1.5f;
+	m_fStimulusDelay = 1.f;
 	m_tStimulusStart = std::chrono::high_resolution_clock::time_point();
 
 	m_fMoveTime = 5.f;
@@ -125,9 +126,10 @@ void StudyInterface::update()
 			m_fViewAngle = m_fTargetAngle;
 		}
 	}
+
 	if (m_bStudyMode)
 	{
-		if (elapsedMove >= 0.f && elapsedMove <= m_fStimulusTime)
+		if (elapsedStim >= 0.f && elapsedStim <= m_fStimulusTime)
 			m_bShowStimulus = true;
 		else
 			m_bShowStimulus = false;
@@ -139,7 +141,7 @@ void StudyInterface::update()
 
 void StudyInterface::draw()
 {
-	if (m_pHinge)
+	if (m_pHinge && m_bShowStimulus)
 		m_pHinge->draw();
 
 	if (m_bAddressEntryMode)
@@ -282,7 +284,7 @@ void StudyInterface::begin()
 	m_pSocket->send(ss.str() + "," + std::to_string(m_fMoveTime));
 	m_tMoveStart = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(250);
 
-	m_tStimulusStart = m_tMoveStart + std::chrono::duration<float, std::chrono::seconds>(m_fMoveTime);
+	m_tStimulusStart = m_tMoveStart + std::chrono::milliseconds(static_cast<int>(m_fMoveTime * 1000.f));
 
 	DataLogger::getInstance().setID(m_strNameBuffer);
 	DataLogger::getInstance().openLog(m_strNameBuffer);
@@ -338,6 +340,7 @@ void StudyInterface::next(bool stimulusDetected)
 
 	DataLogger::getInstance().logMessage(logEntry);
 
+
 	if (m_nReversals == 0)
 	{
 		m_nReversals = 11; // ignore the first
@@ -350,17 +353,23 @@ void StudyInterface::next(bool stimulusDetected)
 			m_pHinge->setAngle(std::get<2>(m_vExperimentConditions.back()));
 			m_pHinge->setLength(std::get<3>(m_vExperimentConditions.back()));
 			m_pHinge->setPos(std::get<4>(m_vExperimentConditions.back()));
+
+			std::stringstream ss;
+			ss.precision(1);
+
+			ss << std::fixed << -std::get<0>(m_vExperimentConditions.back());
+			m_pSocket->send(ss.str() + "," + std::to_string(m_fMoveTime));
+			m_tMoveStart = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(250);
+			m_tStimulusStart = m_tMoveStart + std::chrono::milliseconds(static_cast<int>(m_fStimulusDelay * 1000.f));
 		}
 	}
+	else
+	{
+		m_tStimulusStart = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(static_cast<int>(m_fStimulusDelay * 1000.f));
+	}
 
-	std::stringstream ss;
-	ss.precision(1);
 
-	ss << std::fixed << -std::get<0>(m_vExperimentConditions.back());
-	m_pSocket->send(ss.str() + "," + std::to_string(m_fMoveTime));
-	m_tMoveStart = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(250);
-
-	m_tStimulusStart = m_tMoveStart + std::chrono::duration<float, std::chrono::seconds>(m_fMoveTime);
+	
 }
 
 void StudyInterface::end()
