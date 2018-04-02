@@ -119,7 +119,7 @@ bool WinsockClient::send(std::string msg)
 		return false;
 	}
 
-	printf(">>> Message Sent (%ld Bytes):\n\t%s\n\n", iResult, msg);
+	printf(">>> Message Sent (%ld Bytes):\n\t%s\n\n", iResult, msg.c_str());
 
 	// Receive echo response
 	char recvbuf[DEFAULT_BUFLEN];
