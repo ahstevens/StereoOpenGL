@@ -8,6 +8,12 @@
 #include <chrono>
 #include <random>
 
+#define STUDYPARAM_DECIMAL	1 << 0
+#define STUDYPARAM_POSNEG	1 << 1
+#define STUDYPARAM_ALPHA	1 << 2
+#define STUDYPARAM_NUMERIC	1 << 3
+#define STUDYPARAM_IP		1 << 4
+
 class StudyInterface : public GLFWInputObserver
 {
 public:
@@ -30,17 +36,10 @@ public:
 	float getEyeSep();
 
 private:
-	enum STUDYPARAMFORMAT {
-		REAL,
-		INTEGER,
-		IP,
-		STRING
-	};
-
 	struct StudyParam {
 		std::string desc;
 		std::string buf;
-		STUDYPARAMFORMAT format;
+		uint16_t format;
 	};
 
 	struct StudyCondition {

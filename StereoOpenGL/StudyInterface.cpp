@@ -89,13 +89,13 @@ void StudyInterface::reset()
 
 	m_pEditParam = NULL;
 
-	m_vParams.push_back({ "Server IP" , m_strServerAddress, IP });
-	m_vParams.push_back({ "Server Port" , std::to_string(m_uiServerPort), INTEGER });
-	m_vParams.push_back({ "Eye Separation (cm)" , "6.70", REAL });
-	m_vParams.push_back({ "View Distance (cm)" , "57.0", REAL });
-	m_vParams.push_back({ "View Angle (deg)" , "0", INTEGER });
-	m_vParams.push_back({ "Display Move Time (sec)" , "5.0", REAL });
-	m_vParams.push_back({ "Name" , m_strName, STRING });
+	m_vParams.push_back({ "Server IP" , m_strServerAddress, STUDYPARAM_NUMERIC | STUDYPARAM_DECIMAL | STUDYPARAM_IP });
+	m_vParams.push_back({ "Server Port" , std::to_string(m_uiServerPort), STUDYPARAM_NUMERIC });
+	m_vParams.push_back({ "Eye Separation (cm)" , "6.70", STUDYPARAM_NUMERIC | STUDYPARAM_DECIMAL });
+	m_vParams.push_back({ "View Distance (cm)" , "57.0", STUDYPARAM_NUMERIC | STUDYPARAM_DECIMAL });
+	m_vParams.push_back({ "View Angle (deg)" , "0", STUDYPARAM_NUMERIC | STUDYPARAM_POSNEG });
+	m_vParams.push_back({ "Display Move Time (sec)" , "5.0", STUDYPARAM_NUMERIC | STUDYPARAM_DECIMAL });
+	m_vParams.push_back({ "Name" , m_strName, STUDYPARAM_ALPHA });
 }
 
 void StudyInterface::update()
@@ -318,65 +318,44 @@ void StudyInterface::receive(void * data)
 				if (eventData[1] == GLFW_KEY_BACKSPACE && m_pEditParam->buf.length() > 0)
 					m_pEditParam->buf.pop_back();
 
-				switch (m_pEditParam->format)
-				{
-				case REAL:
+				if (m_pEditParam->format & STUDYPARAM_NUMERIC)
 				{
 					if (eventData[1] >= GLFW_KEY_0 && eventData[1] <= GLFW_KEY_9)
 						m_pEditParam->buf += std::to_string(eventData[1] - GLFW_KEY_0);
-
-					if (eventData[1] == GLFW_KEY_PERIOD && m_pEditParam->buf.find('.') == std::string::npos)
-						m_pEditParam->buf += ".";
-
-					if (eventData[1] == GLFW_KEY_MINUS)
-					{
-						if (m_pEditParam->buf[0] == '-')
-							m_pEditParam->buf.erase(0, 1);
-						else
-							m_pEditParam->buf.insert(0, 1, '-');
-					}
-
-					break;
 				}
-				case INTEGER:
-				{
-					if (eventData[1] >= GLFW_KEY_0 && eventData[1] <= GLFW_KEY_9)
-						m_pEditParam->buf += std::to_string(eventData[1] - GLFW_KEY_0);
 
-					if (eventData[1] == GLFW_KEY_MINUS)
-					{
-						if (m_pEditParam->buf[0] == '-')
-							m_pEditParam->buf.erase(0, 1);
-						else
-							m_pEditParam->buf.insert(0, 1, '-');
-					}
-
-					break;
-				}
-				case IP:
-				{
-					if (eventData[1] >= GLFW_KEY_0 && eventData[1] <= GLFW_KEY_9)
-						m_pEditParam->buf += std::to_string(eventData[1] - GLFW_KEY_0);
-
-					if (eventData[1] == GLFW_KEY_PERIOD && std::count(m_pEditParam->buf.begin(), m_pEditParam->buf.end(), '.') < 3)
-						m_pEditParam->buf += ".";
-
-					break;
-				}
-				case STRING:
+				if (m_pEditParam->format & STUDYPARAM_ALPHA)
 				{
 					if (eventData[1] >= GLFW_KEY_A && eventData[1] <= GLFW_KEY_Z)
 						m_pEditParam->buf += glfwGetKeyName(eventData[1], 0);
-
-					break;
 				}
-				default:
-					break;
+
+				if (m_pEditParam->format & STUDYPARAM_POSNEG)
+				{
+					if (eventData[1] == GLFW_KEY_MINUS)
+					{
+						if (m_pEditParam->buf[0] == '-')
+							m_pEditParam->buf.erase(0, 1);
+						else
+							m_pEditParam->buf.insert(0, 1, '-');
+					}
+				}
+
+				if (m_pEditParam->format & STUDYPARAM_DECIMAL)
+				{
+					if (eventData[1] == GLFW_KEY_PERIOD)
+					{
+						auto decimalCount = std::count(m_pEditParam->buf.begin(), m_pEditParam->buf.end(), '.');
+
+						if (decimalCount == 0 || ((m_pEditParam->format & STUDYPARAM_IP) && decimalCount < 3))
+							m_pEditParam->buf += ".";
+					}
 				}
 
 
 				if (eventData[1] == GLFW_KEY_ENTER && m_pEditParam->buf.length() > 0)
 				{
+					Renderer::getInstance().showMessage(m_pEditParam->desc + " set to " + m_pEditParam->buf);
 
 					if (m_pEditParam->desc.compare("Server IP") == 0)
 					{
