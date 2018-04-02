@@ -3,6 +3,7 @@
 #include <GL/glew.h>
 #include <GLTexture.h>
 #include <gtc/quaternion.hpp>
+#include <chrono>
 #include "LightingSystem.h"
 #include "shaderset.h"
 
@@ -152,6 +153,8 @@ public:
 	void addToUIRenderQueue(RendererSubmission &rs);
 	void clearUIRenderQueue();
 
+	void showMessage(std::string message, float duration = 5.f);
+
 	bool drawPrimitive(std::string primName, glm::mat4 modelTransform, std::string diffuseTextureName, std::string specularTextureName, float specularExponent);
 	bool drawPrimitive(std::string primName, glm::mat4 modelTransform, glm::vec4 diffuseColor, glm::vec4 specularColor, float specularExponent);
 	bool drawFlatPrimitive(std::string primName, glm::mat4 modelTransform, glm::vec4 color);
@@ -244,6 +247,8 @@ private:
 	std::map<std::string, std::pair<GLuint, GLsizei>> m_mapPrimitives;
 
 	std::map<std::string, GLTexture*> m_mapTextures; // holds a flag for texture with transparency
+
+	std::vector<std::tuple<std::string, float, std::chrono::high_resolution_clock::time_point>> m_vMessages;
 
 	GLuint m_glIcosphereVAO, m_glIcosphereVBO, m_glIcosphereEBO;
 	GLuint m_glTorusVAO, m_glTorusVBO, m_glTorusEBO;

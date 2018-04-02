@@ -30,19 +30,37 @@ public:
 	float getEyeSep();
 
 private:
+	enum STUDYPARAMFORMAT {
+		REAL,
+		INTEGER,
+		IP,
+		STRING
+	};
+
+	struct StudyParam {
+		std::string desc;
+		std::string buf;
+		STUDYPARAMFORMAT format;
+	};
+
+	struct StudyCondition {
+		float viewAngle;
+		float viewDist;
+		int startAngle;
+		float hingeLen;
+		glm::vec3 hingePos;
+	};
+
 	WinsockClient* m_pSocket;
 	Hinge* m_pHinge;
 
 	glm::ivec2 m_ivec2Screen;
 	glm::vec2 m_vec2Screen;
 
-	bool m_bAddressEntryMode;
-	bool m_bPortEntryMode;
-	bool m_bEyeSepEntryMode;
-	bool m_bViewDistEntryMode;
-	bool m_bViewAngleEntryMode;
-	bool m_bMoveTimeEntryMode;
-	bool m_bNameEntryMode;
+	std::string m_strServerAddress;
+	unsigned m_uiServerPort;
+
+	std::string m_strName;
 
 	bool m_bStudyMode;
 	bool m_bShowStimulus;
@@ -65,7 +83,7 @@ private:
 	std::vector<float> m_vfAngleConditions;
 	std::vector<float> m_vfDistanceConditions;
 
-	std::vector<std::tuple<float, float, int, float, glm::vec3>> m_vExperimentConditions; // <view angle, view distance, hinge start angle, hinge length, hinge pos>
+	std::vector<StudyCondition> m_vExperimentConditions;
 
 	std::string m_strLastResponse;
 	int m_nReversals;
@@ -79,13 +97,8 @@ private:
 	float m_fLastAngle;
 	float m_fTargetAngle;
 
-	std::string m_strAddressBuffer;
-	std::string m_strPortBuffer;
-	std::string m_strEyeSepBuffer;
-	std::string m_strViewDistBuffer;
-	std::string m_strViewAngleBuffer;
-	std::string m_strMoveTimeBuffer;
-	std::string m_strNameBuffer;
+	std::vector<StudyParam> m_vParams;
+	StudyParam* m_pEditParam;
 
 private:
 	void receive(void* data);

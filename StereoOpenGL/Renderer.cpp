@@ -129,6 +129,11 @@ void Renderer::clearUIRenderQueue()
 	m_vUIRenderQueue.clear();
 }
 
+void Renderer::showMessage(std::string message, float duration)
+{
+	m_vMessages.push_back(std::tuple<std::string, float, std::chrono::high_resolution_clock::time_point>(message, duration, std::chrono::high_resolution_clock::now()));
+}
+
 bool Renderer::drawPrimitive(std::string primName, glm::mat4 modelTransform, std::string diffuseTextureName, std::string specularTextureName, float specularExponent)
 {
 	GLuint vao = getPrimitiveVAO(primName);
@@ -498,6 +503,56 @@ void Renderer::RenderUI(SceneViewInfo * sceneViewInfo, FramebufferDesc * frameBu
 	glNamedBufferSubData(m_glFrameUBO, offsetof(FrameUniforms, m4View), sizeof(FrameUniforms::m4View), glm::value_ptr(sceneViewInfo->view));
 	glNamedBufferSubData(m_glFrameUBO, offsetof(FrameUniforms, m4Projection), sizeof(FrameUniforms::m4Projection), glm::value_ptr(sceneViewInfo->projection));
 	glNamedBufferSubData(m_glFrameUBO, offsetof(FrameUniforms, m4ViewProjection), sizeof(FrameUniforms::m4ViewProjection), glm::value_ptr(vpMat));
+
+	auto tick = std::chrono::high_resolution_clock::now();
+	unsigned maxLines = 50;
+	float msgHeight = sceneViewInfo->m_nRenderHeight / maxLines;
+	float fadeIn = 0.1f;
+	float fadeOut = 1.f;
+
+	// this function finds expired messages
+	auto cleanFunc = [&fadeOut, &tick](std::tuple<std::string, float, std::chrono::high_resolution_clock::time_point> msg)
+	{
+		float lifetime = (std::get<1>(msg) + fadeOut) * 1000.f;
+		float timeAlive = std::chrono::duration<float, std::milli>(tick - std::get<2>(msg)).count();
+		return timeAlive > lifetime;
+	};
+
+	// delete expired messages using our function
+	m_vMessages.erase(
+		std::remove_if(
+			m_vMessages.begin(),
+			m_vMessages.end(),
+			cleanFunc),
+		m_vMessages.end()
+	);
+
+	int msgCount = m_vMessages.size();
+
+	for (unsigned i = msgCount; i-- > 0; )
+	{
+		float timeAlive = (std::chrono::duration<float, std::milli>(tick - std::get<2>(m_vMessages[i])).count() / 1000.f);
+		float msgTime = std::get<1>(m_vMessages[i]);
+		float alpha = 1.f;
+
+		// fade in
+		if (timeAlive < fadeIn)
+			alpha = timeAlive / fadeIn;
+		
+		// fade out
+		if (fadeOut > 0.f && timeAlive > msgTime)
+			alpha = (fadeOut - (timeAlive - msgTime)) / fadeOut;
+		
+		drawUIText(
+			std::get<0>(m_vMessages[i]),
+			glm::vec4(1.f, 1.f, 1.f, alpha),
+			glm::vec3(0.f, sceneViewInfo->m_nRenderHeight - msgHeight * (msgCount - i - 1), 0.f),
+			glm::quat(),
+			msgHeight,
+			HEIGHT,
+			LEFT,
+			TOP_LEFT);
+	}
 
 	processRenderQueue(m_vUIRenderQueue);
 }

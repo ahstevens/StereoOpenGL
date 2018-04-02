@@ -84,12 +84,12 @@ bool WinsockClient::connect(std::string server, int port = DEFAULT_PORT)
 	freeaddrinfo(result);
 
 	if (m_Socket == INVALID_SOCKET) {
-		printf("Unable to connect to server!\n");
+		printf("Unable to connect to server %s port %s!\n", server.c_str(), std::to_string(port).c_str());
 		WSACleanup();
 		return false;
 	}
 
-	printf("Connected to %s\n", server);
+	printf("Connected to %s port %s\n", server.c_str(), std::to_string(port).c_str());
 
 	return true;
 }
