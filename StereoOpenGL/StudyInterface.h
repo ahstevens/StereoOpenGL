@@ -7,6 +7,7 @@
 #include <glm.hpp>
 #include <chrono>
 #include <random>
+#include <future>
 
 #define STUDYPARAM_DECIMAL	1 << 0
 #define STUDYPARAM_POSNEG	1 << 1
@@ -50,6 +51,7 @@ private:
 		glm::vec3 hingePos;
 	};
 
+	std::future<bool> m_SocketFuture;
 	WinsockClient* m_pSocket;
 	Hinge* m_pHinge;
 

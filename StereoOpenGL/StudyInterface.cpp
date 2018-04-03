@@ -128,6 +128,19 @@ void StudyInterface::update()
 	}
 	else
 		m_bShowStimulus = true;
+
+
+	if (m_SocketFuture.valid() && m_SocketFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+	{
+		if (m_SocketFuture.get())
+		{
+			m_pSocket->send("0,2.5");
+			Renderer::getInstance().showMessage("Successfully connected to " + m_strServerAddress + " port " + std::to_string(m_uiServerPort) + " successfully!");
+		}
+		else
+			Renderer::getInstance().showMessage("ERROR! Could not connect to server at " + m_strServerAddress + " port " + std::to_string(m_uiServerPort) + "!");
+
+	}
 }
 
 
@@ -466,13 +479,15 @@ void StudyInterface::receive(void * data)
 
 			if (eventData[1] == GLFW_KEY_F9)
 			{
-				if (m_pSocket->connect(m_strServerAddress, m_uiServerPort))
+				if (!m_SocketFuture.valid())
 				{
-					m_pSocket->send("0,2.5");
-					Renderer::getInstance().showMessage("Connected to " + m_strServerAddress + " port " + std::to_string(m_uiServerPort) + " successfully!");
+					Renderer::getInstance().showMessage("Connecting to " + m_strServerAddress + " port " + std::to_string(m_uiServerPort));
+					m_SocketFuture = std::async(std::launch::async, &WinsockClient::connect, m_pSocket, m_strServerAddress, m_uiServerPort);
 				}
 				else
-					Renderer::getInstance().showMessage("ERROR! Could not connect to server at " + m_strServerAddress + " port " + std::to_string(m_uiServerPort) + "!");
+				{
+					Renderer::getInstance().showMessage("Already attempting connection with " + m_strServerAddress + " port " + std::to_string(m_uiServerPort));
+				}
 			}
 
 			if (eventData[1] == GLFW_KEY_R && !m_pEditParam)
