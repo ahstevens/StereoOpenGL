@@ -1,9 +1,7 @@
-#define _WINSOCKAPI_
+
 
 #include "Engine.h"
 #include "DebugDrawer.h"
-#include "UntrackedStereoDiagram.h"
-#include "StudyInterface.h"
 
 #include <fstream>
 #include <sstream>
@@ -14,7 +12,6 @@
 
 #define INTOCM 2.54f
 
-UntrackedStereoDiagram*			g_pDiagram;
 
 float							g_fDisplayDiag = 27.f * INTOCM; // physical display diagonal measurement, given in inches, usually
 glm::vec3						g_vec3ScreenPos(0.f, 0.f, 0.f);
@@ -22,7 +19,6 @@ glm::vec3						g_vec3ScreenNormal(0.f, 0.f, 1.f);
 glm::vec3						g_vec3ScreenUp(0.f, 1.f, 0.f);
 bool							g_bStereo = true;
 
-StudyInterface*					g_pStudyInterface = NULL;
 
 //-----------------------------------------------------------------------------
 // Purpose: OpenGL Debug Callback Function
@@ -99,6 +95,8 @@ Engine::Engine(int argc, char *argv[], int mode)
 	, m_pMainWindow(NULL)
 	, m_pLeftEyeFramebuffer(NULL)
 	, m_pRightEyeFramebuffer(NULL)
+	, m_pDiagram(NULL)
+	, m_pStudyInterface(NULL)
 	, m_bShowDiagnostics(false)
 	, m_bStudyMode(false)
 {
@@ -164,14 +162,14 @@ bool Engine::init()
 		glm::vec4(g_vec3ScreenPos, 1.f)
 	);
 
-	g_pDiagram = new UntrackedStereoDiagram(screenTrans, m_ivec2MainWindowSize);
+	m_pDiagram = new UntrackedStereoDiagram(screenTrans, m_ivec2MainWindowSize);
 
 	Renderer::getInstance().addTexture(new GLTexture("woodfloor.png", false));
 	Renderer::getInstance().addTexture(new GLTexture("wallpaper.png", false));
 
-	g_pStudyInterface = new StudyInterface();
-	g_pStudyInterface->init(m_ivec2MainWindowSize, g_fDisplayDiag);
-	GLFWInputBroadcaster::getInstance().addObserver(g_pStudyInterface);
+	m_pStudyInterface = new StudyInterface();
+	m_pStudyInterface->init(m_ivec2MainWindowSize, g_fDisplayDiag);
+	GLFWInputBroadcaster::getInstance().addObserver(m_pStudyInterface);
 
 
 	createUIView();
@@ -231,6 +229,15 @@ bool Engine::initGL(bool stereoContext)
 //-----------------------------------------------------------------------------
 void Engine::Shutdown()
 {
+	if (m_pDiagram)
+		delete m_pDiagram;
+
+	if (m_pStudyInterface)
+	{
+		GLFWInputBroadcaster::getInstance().removeObserver(m_pStudyInterface);
+		delete m_pStudyInterface;
+	}
+
 	GLFWInputBroadcaster::getInstance().removeObserver(this);
 	 
 	if (m_pLeftEyeFramebuffer)
@@ -263,10 +270,12 @@ void Engine::receive(void * data)
 
 	if (eventData[0] == GLFWInputBroadcaster::EVENT::KEY_DOWN)
 	{
-		if (eventData[1] == GLFW_KEY_ESCAPE)
+		if (eventData[1] == GLFW_KEY_ESCAPE && ((m_pStudyInterface->isStudyActive() && (glfwGetKey(m_pMainWindow, GLFW_KEY_LEFT_SHIFT) || glfwGetKey(m_pMainWindow, GLFW_KEY_RIGHT_SHIFT))) || !m_pStudyInterface->isStudyActive()))
+		{
 			glfwSetWindowShouldClose(m_pMainWindow, GLFW_TRUE);
+		}
 
-		if (eventData[1] == GLFW_KEY_D)
+		if (eventData[1] == GLFW_KEY_F12)
 		{
 			m_bShowDiagnostics = !m_bShowDiagnostics;
 		}
@@ -275,24 +284,24 @@ void Engine::receive(void * data)
 	if (eventData[0] == GLFWInputBroadcaster::EVENT::KEY_DOWN || eventData[0] == GLFWInputBroadcaster::EVENT::KEY_HOLD)
 	{	
 		if (eventData[1] == GLFW_KEY_MINUS)
-			g_pDiagram->setEyeSeparation(g_pDiagram->getEyeSeparation() - 0.1f);
+			m_pDiagram->setEyeSeparation(m_pDiagram->getEyeSeparation() - 0.1f);
 		if (eventData[1] == GLFW_KEY_EQUAL)
-			g_pDiagram->setEyeSeparation(g_pDiagram->getEyeSeparation() + 0.1f);
+			m_pDiagram->setEyeSeparation(m_pDiagram->getEyeSeparation() + 0.1f);
 		
 		if (eventData[1] == GLFW_KEY_LEFT_BRACKET)
-			g_pDiagram->setViewAngle(g_pDiagram->getViewAngle() - 1.f);
+			m_pDiagram->setViewAngle(m_pDiagram->getViewAngle() - 1.f);
 		if (eventData[1] == GLFW_KEY_RIGHT_BRACKET)
-			g_pDiagram->setViewAngle(g_pDiagram->getViewAngle() + 1.f);
+			m_pDiagram->setViewAngle(m_pDiagram->getViewAngle() + 1.f);
 
 		if (eventData[1] == GLFW_KEY_9)
-			g_pDiagram->setViewDistance(g_pDiagram->getViewDistance() - 0.1f);
+			m_pDiagram->setViewDistance(m_pDiagram->getViewDistance() - 0.1f);
 		if (eventData[1] == GLFW_KEY_0)
-			g_pDiagram->setViewDistance(g_pDiagram->getViewDistance() + 0.1f);
+			m_pDiagram->setViewDistance(m_pDiagram->getViewDistance() + 0.1f);
 
 		if (eventData[1] == GLFW_KEY_COMMA)
-			g_pDiagram->setProjectionAngle(g_pDiagram->getProjectionAngle() - 1.f);
+			m_pDiagram->setProjectionAngle(m_pDiagram->getProjectionAngle() - 1.f);
 		if (eventData[1] == GLFW_KEY_PERIOD)
-			g_pDiagram->setProjectionAngle(g_pDiagram->getProjectionAngle() + 1.f);
+			m_pDiagram->setProjectionAngle(m_pDiagram->getProjectionAngle() + 1.f);
 
 	}
 }
@@ -330,6 +339,8 @@ void Engine::RunMainLoop()
 		render();
 		m_msRenderTime = clock::now() - a;
 	}
+
+	Shutdown();
 }
 
 
@@ -340,15 +351,15 @@ void Engine::update()
 	float width_cm = m_ivec2MainWindowSize.x * sizer;
 	float height_cm = m_ivec2MainWindowSize.y * sizer;
 
-	g_pStudyInterface->update();
+	m_pStudyInterface->update();
 
 
 	if (g_bStereo)
 	{
-		glm::vec3 COP = g_pStudyInterface->getCOP();
+		glm::vec3 COP = m_pStudyInterface->getCOP();
 		glm::quat COPRot = glm::inverse(glm::lookAt(COP, glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f)));
 		glm::vec3 COPRight = glm::normalize(glm::mat3_cast(COPRot)[0]);
-		glm::vec3 COPOffset = COPRight * g_pStudyInterface->getEyeSep() * 0.5f;
+		glm::vec3 COPOffset = COPRight * m_pStudyInterface->getEyeSep() * 0.5f;
 
 		// Update eye positions using current head position
 		glm::vec3 leftEyePos = COP - COPOffset;
@@ -362,8 +373,8 @@ void Engine::update()
 	}
 	else
 	{
-		m_sviMonoInfo.view = glm::translate(glm::mat4(), -g_pStudyInterface->getCOP());
-		m_sviMonoInfo.projection = getViewingFrustum(g_pStudyInterface->getCOP(), g_vec3ScreenPos, g_vec3ScreenNormal, g_vec3ScreenUp, glm::vec2(width_cm, height_cm));
+		m_sviMonoInfo.view = glm::translate(glm::mat4(), -m_pStudyInterface->getCOP());
+		m_sviMonoInfo.projection = getViewingFrustum(m_pStudyInterface->getCOP(), g_vec3ScreenPos, g_vec3ScreenNormal, g_vec3ScreenUp, glm::vec2(width_cm, height_cm));
 	}
 
 }
@@ -383,7 +394,7 @@ void Engine::makeScene()
 	//Renderer::getInstance().drawPrimitiveCustom("torus", glm::translate(glm::mat4(), glm::vec3(x, y, z)) * glm::rotate(glm::mat4(), glm::radians(angle), glm::vec3(0.f, 1.f, 0.f)), "shadow");
 	//Renderer::getInstance().drawPrimitiveCustom("box", glm::translate(glm::mat4(), glm::vec3(x, y, z)) * glm::rotate(glm::mat4(), glm::radians(-angle), glm::vec3(0.f, 1.f, 0.f)) * glm::scale(glm::mat4(), glm::vec3(0.5f)), "shadow");
 
-	//g_pDiagram->draw();
+	//m_pDiagram->draw();
 
 	//g_pHinge->drawShadow();
 	//
@@ -417,7 +428,7 @@ void Engine::makeScene()
 	//	glm::translate(glm::mat4(), glm::vec3(g_pHinge->getLength() * 0.75f, cubeSize / 2.f - screenSize_cm.y / 2.f, -5.f-g_pHinge->getLength())) * glm::scale(glm::mat4(), glm::vec3(cubeSize)),
 	//	"shadow");
 
-	g_pStudyInterface->draw();
+	m_pStudyInterface->draw();
 
 	if (m_bShowDiagnostics)
 		drawDiagnostics();
@@ -428,7 +439,7 @@ void Engine::makeScene()
 
 void Engine::render()
 {
-	Renderer::getInstance().sortTransparentObjects(g_pStudyInterface->getCOP());
+	Renderer::getInstance().sortTransparentObjects(m_pStudyInterface->getCOP());
 
 	if (g_bStereo)
 	{

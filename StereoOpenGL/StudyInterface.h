@@ -35,6 +35,8 @@ public:
 	glm::vec3 getCOP();
 	float getEyeSep();
 
+	bool isStudyActive() { return m_bStudyMode; }
+
 private:
 	enum StudyResponse {
 		NONE,
@@ -54,6 +56,7 @@ private:
 		int startAngle;
 		float hingeLen;
 		glm::vec3 hingePos;
+		bool matchedView;
 	};
 
 	std::future<bool> m_SocketFuture;
@@ -73,6 +76,8 @@ private:
 	bool m_bShowStimulus;
 
 	bool m_bLockViewCOP;
+
+	float m_fCurrentScreenAngle;
 
 	float m_fCOPDist;
 	float m_fCOPAngle;

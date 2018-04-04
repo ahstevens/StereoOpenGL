@@ -25,7 +25,10 @@ StudyInterface::StudyInterface()
 StudyInterface::~StudyInterface()
 {
 	if (m_pSocket)
+	{
+		m_pSocket->send("0,1");
 		delete m_pSocket;
+	}
 
 	if (m_pHinge)
 		delete m_pHinge;
@@ -62,6 +65,8 @@ void StudyInterface::reset()
 
 	m_strName = "NONAME";
 
+	m_fCurrentScreenAngle = 0.f;
+
 	m_fViewAngle = 0.f;
 	m_fViewDist = 57.f;
 	m_fEyeSep = 6.7;
@@ -77,7 +82,7 @@ void StudyInterface::reset()
 
 	m_vExperimentConditions.clear();
 
-	m_vfAngleConditions = { 0.f, 10.f, 30.f, 60.f };
+	m_vfAngleConditions = { 0.f, 15.f, 30.f };
 	m_vfDistanceConditions = { 1.f, 0.5f, 2.f };
 
 	m_fStimulusTime = 1.5f;
@@ -136,12 +141,13 @@ void StudyInterface::update()
 	{
 		if (m_SocketFuture.get())
 		{
-			m_pSocket->send("0,2.5");
+			if (m_pSocket->send("0,2.5"))
+				m_fCurrentScreenAngle = 0.f;
+
 			Renderer::getInstance().showMessage("Successfully connected to " + m_strServerAddress + " port " + std::to_string(m_uiServerPort) + " successfully!");
 		}
 		else
 			Renderer::getInstance().showMessage("ERROR! Could not connect to server at " + m_strServerAddress + " port " + std::to_string(m_uiServerPort) + "!");
-
 	}
 }
 
@@ -228,34 +234,19 @@ void StudyInterface::begin()
 	for (auto a : m_vfAngleConditions)
 		for (auto d : m_vfDistanceConditions)
 		{
-			m_vExperimentConditions.push_back({ m_BoolDistribution(m_Generator) ? a : -a, d, 90 + m_AngleDistribution(m_Generator), 10.f, glm::vec3(0.f, 0.f, -5.f) });
-			m_vExperimentConditions.push_back({ m_BoolDistribution(m_Generator) ? a : -a, d, 90 - m_AngleDistribution(m_Generator), 10.f, glm::vec3(0.f, 0.f, -5.f) });
+			m_vExperimentConditions.push_back({ m_BoolDistribution(m_Generator) ? a : -a, d, 90 + m_AngleDistribution(m_Generator), 10.f, glm::vec3(0.f, 0.f, -5.f), true });
+			m_vExperimentConditions.push_back({ m_BoolDistribution(m_Generator) ? a : -a, d, 90 - m_AngleDistribution(m_Generator), 10.f, glm::vec3(0.f, 0.f, -5.f), true });
+			//m_vExperimentConditions.push_back({ m_BoolDistribution(m_Generator) ? a : -a, d, 90 + m_AngleDistribution(m_Generator), 10.f, glm::vec3(0.f, 0.f, -5.f), false });
+			//m_vExperimentConditions.push_back({ m_BoolDistribution(m_Generator) ? a : -a, d, 90 - m_AngleDistribution(m_Generator), 10.f, glm::vec3(0.f, 0.f, -5.f), false });
 		}
-
-
-	//m_vExperimentConditions.push_back({ 0.f, 1.f, 90 + m_AngleDistribution(m_Generator), 5.f, glm::vec3(0.f) });
-	//m_vExperimentConditions.push_back({ 0.f, 1.f, 90 - m_AngleDistribution(m_Generator), 5.f, glm::vec3(0.f) });
-	//m_vExperimentConditions.push_back({ 0.f, 1.f, 90 + m_AngleDistribution(m_Generator), 5.f, glm::vec3(0.f, 0.f, -5.f) });
-	//m_vExperimentConditions.push_back({ 0.f, 1.f, 90 - m_AngleDistribution(m_Generator), 5.f, glm::vec3(0.f, 0.f, -5.f) });
-	//m_vExperimentConditions.push_back({ 0.f, 1.f, 90 + m_AngleDistribution(m_Generator), 10.f, glm::vec3(0.f) });
-	//m_vExperimentConditions.push_back({ 0.f, 1.f, 90 - m_AngleDistribution(m_Generator), 10.f, glm::vec3(0.f) });
-	//m_vExperimentConditions.push_back({ 0.f, 1.f, 90 + m_AngleDistribution(m_Generator), 10.f, glm::vec3(0.f, 0.f, -10.f) });
-	//m_vExperimentConditions.push_back({ 0.f, 1.f, 90 - m_AngleDistribution(m_Generator), 10.f, glm::vec3(0.f, 0.f, -10.f) });
-	//m_vExperimentConditions.push_back({ 0.f, 1.f, 90 + m_AngleDistribution(m_Generator), 30.f, glm::vec3(0.f) });
-	//m_vExperimentConditions.push_back({ 0.f, 1.f, 90 - m_AngleDistribution(m_Generator), 30.f, glm::vec3(0.f) });
-	//m_vExperimentConditions.push_back({ 0.f, 1.f, 90 + m_AngleDistribution(m_Generator), 30.f, glm::vec3(0.f, 0.f, -30.f) });
-	//m_vExperimentConditions.push_back({ 0.f, 1.f, 90 - m_AngleDistribution(m_Generator), 30.f, glm::vec3(0.f, 0.f, -30.f) });
-		
-
-	std::random_shuffle(m_vExperimentConditions.begin(), m_vExperimentConditions.end());
+	
+	std::shuffle(m_vExperimentConditions.begin(), m_vExperimentConditions.end(), m_Generator);
 
 	m_strLastResponse = std::string();
 
-	m_bLockViewCOP = false;
-
 	DataLogger::getInstance().setID(m_strName);
 	DataLogger::getInstance().openLog(m_strName);
-	DataLogger::getInstance().setHeader("trial,view.angle,view.dist,start.angle,hinge.length,hinge.z.pos,hinge.angle,response");
+	DataLogger::getInstance().setHeader("trial,view.angle,view.dist,fishtank,start.angle,hinge.length,hinge.z.pos,hinge.angle,response");
 	DataLogger::getInstance().start();
 
 	m_bPaused = true;
@@ -288,8 +279,11 @@ void StudyInterface::next(StudyResponse response)
 
 		m_vExperimentConditions.pop_back();
 
-		m_pSocket->send("0," + std::to_string(m_fMoveTime));
-		m_tMoveStart = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(250);
+		if (m_pSocket->send("0," + std::to_string(m_fMoveTime)))
+		{
+			m_fCurrentScreenAngle = 0.f;
+			m_tMoveStart = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(250);
+		}
 
 		m_bPaused = true;
 
@@ -305,15 +299,14 @@ void StudyInterface::next(StudyResponse response)
 void StudyInterface::end()
 {
 	m_pSocket->send("0,2.5");
+	m_fCurrentScreenAngle = 0.f;
 	m_bStudyMode = false;
 	DataLogger::getInstance().closeLog();
 }
 
 glm::vec3 StudyInterface::getCOP()
 {
-	if (m_bStudyMode)
-		return glm::vec3(glm::rotate(glm::mat4(), glm::radians(m_fCOPAngle), glm::vec3(0.f, 1.f, 0.f)) * glm::vec4(0.f, 0.f, m_fViewDist * m_vExperimentConditions.back().viewDist, 1.f));
-	else if (m_bLockViewCOP)
+	if (m_bLockViewCOP)
 		return glm::vec3(glm::rotate(glm::mat4(), glm::radians(m_fViewAngle), glm::vec3(0.f, 1.f, 0.f)) * glm::vec4(0.f, 0.f, m_fViewDist, 1.f));
 	else
 		return glm::vec3(glm::rotate(glm::mat4(), glm::radians(m_fCOPAngle), glm::vec3(0.f, 1.f, 0.f)) * glm::vec4(0.f, 0.f, m_fCOPDist, 1.f));
@@ -332,6 +325,8 @@ void StudyInterface::writeToLog(StudyResponse response)
 	logEntry += std::to_string(m_vExperimentConditions.back().viewAngle);
 	logEntry += ",";
 	logEntry += std::to_string(m_vExperimentConditions.back().viewDist);
+	logEntry += ",";
+	logEntry += std::to_string(m_vExperimentConditions.back().matchedView);
 	logEntry += ",";
 	logEntry += std::to_string(m_vExperimentConditions.back().startAngle);
 	logEntry += ",";
@@ -353,14 +348,24 @@ void StudyInterface::loadCondition()
 	m_pHinge->setLength(m_vExperimentConditions.back().hingeLen);
 	m_pHinge->setPos(m_vExperimentConditions.back().hingePos);
 
-	std::stringstream ss;
-	ss.precision(1);
+	m_fCOPDist = m_fViewDist * m_vExperimentConditions.back().viewDist;
 
-	ss << std::fixed << -m_vExperimentConditions.back().viewAngle;
-	m_pSocket->send(ss.str() + "," + std::to_string(m_fMoveTime));
-	m_tMoveStart = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(250);
+	m_bLockViewCOP = m_vExperimentConditions.back().matchedView;
 
-	m_tStimulusStart = m_tMoveStart + std::chrono::milliseconds(static_cast<int>((m_fMoveTime + m_fStimulusDelay) * 1000.f));
+	if (m_fCurrentScreenAngle != -m_vExperimentConditions.back().viewAngle)
+	{
+		m_fCurrentScreenAngle = -m_vExperimentConditions.back().viewAngle;
+
+		m_pSocket->send((int)-m_vExperimentConditions.back().viewAngle + "," + std::to_string(m_fMoveTime));
+		m_tMoveStart = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(250);
+
+		m_tStimulusStart = m_tMoveStart + std::chrono::milliseconds(static_cast<int>((m_fMoveTime + m_fStimulusDelay) * 1000.f));
+	}
+	else
+	{
+		m_tStimulusStart = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(static_cast<int>(m_fStimulusDelay * 1000.f));
+	}
+
 }
 
 void StudyInterface::receive(void * data)
@@ -561,10 +566,10 @@ void StudyInterface::receive(void * data)
 				}
 			}
 
-			if (eventData[1] == GLFW_KEY_R && !m_pEditParam)
+			if (eventData[1] == GLFW_KEY_R && !m_pEditParam && !m_bStudyMode)
 				reset();
 
-			if (eventData[1] == GLFW_KEY_G && !m_bStudyMode && !m_pEditParam)
+			if (eventData[1] == GLFW_KEY_HOME && !m_pEditParam && !m_bStudyMode)
 			{
 				m_bStudyMode = true;
 				begin();

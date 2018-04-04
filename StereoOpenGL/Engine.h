@@ -1,5 +1,7 @@
 #pragma once
 
+#define _WINSOCKAPI_
+
 #include <chrono>
 #include <vector>
 
@@ -11,6 +13,8 @@
 
 #include "GLFWInputBroadcaster.h"
 #include "Renderer.h"
+#include "UntrackedStereoDiagram.h"
+#include "StudyInterface.h"
 
 
 //-----------------------------------------------------------------------------
@@ -48,6 +52,9 @@ private:
 	Renderer::SceneViewInfo m_sviLeftEyeInfo;
 	Renderer::SceneViewInfo m_sviRightEyeInfo;
 	Renderer::SceneViewInfo m_sviUIInfo;
+
+	UntrackedStereoDiagram*	m_pDiagram;
+	StudyInterface*	m_pStudyInterface;
 
 private:
 	void listDisplayInfo();
