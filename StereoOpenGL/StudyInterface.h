@@ -30,13 +30,18 @@ public:
 	void draw();
 
 	void begin();
-	void next(bool stimulusDetected);
 	void end();
 
 	glm::vec3 getCOP();
 	float getEyeSep();
 
 private:
+	enum StudyResponse {
+		NONE,
+		ACUTE,
+		OBTUSE
+	};
+
 	struct StudyParam {
 		std::string desc;
 		std::string buf;
@@ -64,6 +69,7 @@ private:
 	std::string m_strName;
 
 	bool m_bStudyMode;
+	bool m_bPaused;
 	bool m_bShowStimulus;
 
 	bool m_bLockViewCOP;
@@ -102,6 +108,9 @@ private:
 	StudyParam* m_pEditParam;
 
 private:
+	void next(StudyResponse response);
+	void writeToLog(StudyResponse response);
+	void loadCondition();
 	void receive(void* data);
 };
 
