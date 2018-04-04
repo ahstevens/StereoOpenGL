@@ -228,8 +228,8 @@ void StudyInterface::begin()
 	for (auto a : m_vfAngleConditions)
 		for (auto d : m_vfDistanceConditions)
 		{
-			m_vExperimentConditions.push_back({ m_BoolDistribution(m_Generator) ? a : -a, d, 90 + m_AngleDistribution(m_Generator), 10.f, glm::vec3(0.f, 0.f, -10.f) });
-			m_vExperimentConditions.push_back({ m_BoolDistribution(m_Generator) ? a : -a, d, 90 - m_AngleDistribution(m_Generator), 10.f, glm::vec3(0.f, 0.f, -10.f) });
+			m_vExperimentConditions.push_back({ m_BoolDistribution(m_Generator) ? a : -a, d, 90 + m_AngleDistribution(m_Generator), 10.f, glm::vec3(0.f, 0.f, -5.f) });
+			m_vExperimentConditions.push_back({ m_BoolDistribution(m_Generator) ? a : -a, d, 90 - m_AngleDistribution(m_Generator), 10.f, glm::vec3(0.f, 0.f, -5.f) });
 		}
 
 
@@ -304,6 +304,7 @@ void StudyInterface::next(StudyResponse response)
 
 void StudyInterface::end()
 {
+	m_pSocket->send("0,2.5");
 	m_bStudyMode = false;
 	DataLogger::getInstance().closeLog();
 }
