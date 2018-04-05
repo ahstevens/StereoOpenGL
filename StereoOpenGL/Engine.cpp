@@ -17,7 +17,7 @@ float							g_fDisplayDiag = 27.f * INTOCM; // physical display diagonal measure
 glm::vec3						g_vec3ScreenPos(0.f, 0.f, 0.f);
 glm::vec3						g_vec3ScreenNormal(0.f, 0.f, 1.f);
 glm::vec3						g_vec3ScreenUp(0.f, 1.f, 0.f);
-bool							g_bStereo = false;
+bool							g_bStereo = true;
 
 
 //-----------------------------------------------------------------------------
@@ -85,7 +85,7 @@ void dprintf(const char *fmt, ...)
 	OutputDebugStringA(buffer);
 }
 
-void error_callback_glfw(int error, const char* desc) { dprintf("GLFW Error %d: %s\n", error, desc); }
+void error_callback_glfw(int error, const char* desc) { dprintf("GLFW Error 0x%x: %s\n", error, desc); }
 
 //-----------------------------------------------------------------------------
 // Purpose: Constructor
@@ -275,7 +275,7 @@ void Engine::receive(void * data)
 			glfwSetWindowShouldClose(m_pMainWindow, GLFW_TRUE);
 		}
 
-		if (eventData[1] == GLFW_KEY_F12)
+		if (eventData[1] == GLFW_KEY_F11)
 		{
 			m_bShowDiagnostics = !m_bShowDiagnostics;
 		}
@@ -522,7 +522,7 @@ GLFWwindow * Engine::createWindow(GLFWmonitor* monitor, int width, int height, b
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_SAMPLES, 16);
 #if _DEBUG
-	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
+	//glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
 #endif
 	if (stereoContext)
 	{
@@ -540,9 +540,17 @@ GLFWwindow * Engine::createWindow(GLFWmonitor* monitor, int width, int height, b
 
 	GLFWwindow *ret = glfwCreateWindow(w, h, "CCOM VisLab", fullscreen ? monitor : NULL, NULL);
 
+	if (!ret)
+	{
+		dprintf("%s - Error: The OpenGL window could not be created!\n", __FUNCTION__);
+		if (stereoContext)
+			dprintf("%s - Tip: Ensure that stereo is enabled for the executable through the nVidia Control Panel 3D Program Settings.\n", __FUNCTION__);
+		return NULL;
+	}
+
 	if(stereoContext && !glfwGetWindowAttrib(ret, GLFW_STEREO))
 		dprintf("%s - Error: The OpenGL window context is not stereo!\n", __FUNCTION__);
-
+	
 	glfwMakeContextCurrent(ret);
 
 	glfwSwapInterval(0);

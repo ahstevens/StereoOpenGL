@@ -161,7 +161,7 @@ void StudyInterface::draw()
 			glm::vec4(1.f),
 			glm::vec3(0.f),
 			glm::quat(),
-			100.f,
+			m_ivec2Screen.y / 50.f,
 			Renderer::HEIGHT,
 			Renderer::LEFT,
 			Renderer::BOTTOM_LEFT
@@ -229,12 +229,14 @@ void StudyInterface::draw()
 void StudyInterface::begin()
 {
 	for (auto a : m_vfAngleConditions)
-		for (auto d : m_vfDistanceConditions)
-			for (auto ft : m_vbFishtankConditions)
+		//for (auto d : m_vfDistanceConditions)
 		{
-			m_vExperimentConditions.push_back({ m_BoolDistribution(m_Generator) ? a : -a, d, 90 + m_AngleDistribution(m_Generator), m_fHingeSize, glm::vec3(0.f, 0.f, m_fHingeSize / 2.f), ft });
-			m_vExperimentConditions.push_back({ m_BoolDistribution(m_Generator) ? a : -a, d, 90 - m_AngleDistribution(m_Generator), m_fHingeSize, glm::vec3(0.f, 0.f, m_fHingeSize / 2.f), ft });
+			m_vExperimentConditions.push_back({ m_BoolDistribution(m_Generator) ? a : -a, 1.f, 90 + m_AngleDistribution(m_Generator), m_fHingeSize, glm::vec3(0.f, 0.f, m_fHingeSize / 2.f), true });
+			m_vExperimentConditions.push_back({ m_BoolDistribution(m_Generator) ? a : -a, 1.f, 90 - m_AngleDistribution(m_Generator), m_fHingeSize, glm::vec3(0.f, 0.f, m_fHingeSize / 2.f), true });
+			//m_vExperimentConditions.push_back({ m_BoolDistribution(m_Generator) ? a : -a, d, 90 + m_AngleDistribution(m_Generator), m_fHingeSize, glm::vec3(0.f, 0.f, m_fHingeSize / 2.f), false });
+			//m_vExperimentConditions.push_back({ m_BoolDistribution(m_Generator) ? a : -a, d, 90 - m_AngleDistribution(m_Generator), m_fHingeSize, glm::vec3(0.f, 0.f, m_fHingeSize / 2.f), false });
 		}
+		
 	
 	m_nTrials = m_vExperimentConditions.size();
 
