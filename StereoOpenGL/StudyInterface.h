@@ -92,10 +92,6 @@ private:
 	float m_fStepSize;
 	float m_fMinStep;
 
-	std::vector<float> m_vfAngleConditions;
-	std::vector<float> m_vfDistanceConditions;
-	std::vector<bool> m_vbFishtankConditions;
-
 	std::vector<StudyCondition> m_vExperimentConditions;
 	unsigned m_nTrials;
 

@@ -52,7 +52,7 @@ void StudyInterface::init(glm::ivec2 screenDims, float screenDiag)
 		m_pSocket = new WinsockClient();
 
 	if (m_pHinge == NULL)
-		m_pHinge = new Hinge(5.f, 90.f);
+		m_pHinge = new Hinge(m_fHingeSize, 90.f);
 }
 
 void StudyInterface::reset()
@@ -62,7 +62,7 @@ void StudyInterface::reset()
 	m_bBlockInput = false;
 	m_bLockViewCOP = false;
 
-	m_strServerAddress = "192.168.";
+	m_strServerAddress = "192.168.137.";
 	m_uiServerPort = 5005;
 
 	m_strName = "NONAME";
@@ -82,14 +82,11 @@ void StudyInterface::reset()
 
 	m_vExperimentConditions.clear();
 
-	m_vfAngleConditions = { 0.f, 15.f, 30.f };
-	m_vfDistanceConditions = { 1.f, 0.5f, 2.f };
-
 	m_fStimulusTime = 1.5f;
 	m_fStimulusDelay = 1.f;
 	m_tStimulusStart = std::chrono::high_resolution_clock::time_point();
 
-	m_fMoveTime = 5.f;
+	m_fMoveTime = 2.5f;
 	m_tMoveStart = std::chrono::high_resolution_clock::time_point();
 
 	m_fLastAngle = m_fTargetAngle = 0.f;
@@ -102,7 +99,7 @@ void StudyInterface::reset()
 	m_vParams.push_back({ "View Distance (cm)" , "57.0", STUDYPARAM_NUMERIC | STUDYPARAM_DECIMAL });
 	m_vParams.push_back({ "View Angle (deg)" , "0", STUDYPARAM_NUMERIC | STUDYPARAM_POSNEG });
 	m_vParams.push_back({ "Display Move Time (sec)" , "5.0", STUDYPARAM_NUMERIC | STUDYPARAM_DECIMAL });
-	m_vParams.push_back({ "Name" , m_strName, STUDYPARAM_ALPHA });
+	m_vParams.push_back({ "Name" , m_strName, STUDYPARAM_ALPHA | STUDYPARAM_NUMERIC | STUDYPARAM_DECIMAL });
 }
 
 void StudyInterface::update()
@@ -232,15 +229,19 @@ void StudyInterface::draw()
 
 void StudyInterface::begin()
 {
-	for (auto a : m_vfAngleConditions)
-		//for (auto d : m_vfDistanceConditions)
-		{
-			m_vExperimentConditions.push_back({ m_BoolDistribution(m_Generator) ? a : -a, 1.f, 90 + m_AngleDistribution(m_Generator), m_fHingeSize, glm::vec3(0.f, 0.f, -m_fHingeSize / 2.f), true });
-			m_vExperimentConditions.push_back({ m_BoolDistribution(m_Generator) ? a : -a, 1.f, 90 - m_AngleDistribution(m_Generator), m_fHingeSize, glm::vec3(0.f, 0.f, -m_fHingeSize / 2.f), true });
-			//m_vExperimentConditions.push_back({ m_BoolDistribution(m_Generator) ? a : -a, d, 90 + m_AngleDistribution(m_Generator), m_fHingeSize, glm::vec3(0.f, 0.f, -m_fHingeSize / 2.f), false });
-			//m_vExperimentConditions.push_back({ m_BoolDistribution(m_Generator) ? a : -a, d, 90 - m_AngleDistribution(m_Generator), m_fHingeSize, glm::vec3(0.f, 0.f, -m_fHingeSize / 2.f), false });
-		}
-		
+	for (auto a : { 0.f, 15.f, 30.f })		// angles
+		for (auto d : { 1.f, 0.5f, 2.f })	// distances
+			for (auto f : { true, false })	// fishtank mode (eye-couple perspective)
+			{
+				StudyCondition cond;
+				cond.hingeLen = m_fHingeSize;
+				cond.hingePos = glm::vec3(0.f, 0.f, -m_fHingeSize / 2.f);
+				cond.startAngle = 90 + (m_AngleDistribution(m_Generator) * m_BoolDistribution(m_Generator) ? 1 : -1);
+				cond.viewAngle = m_BoolDistribution(m_Generator) ? a : -a;
+				cond.viewDist = d;
+				cond.matchedView = f;
+				m_vExperimentConditions.push_back(cond);
+			}		
 	
 	m_nTrials = m_vExperimentConditions.size();
 

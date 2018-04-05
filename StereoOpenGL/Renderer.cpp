@@ -384,6 +384,7 @@ void Renderer::RenderFrame(SceneViewInfo *sceneView3DInfo, SceneViewInfo *sceneV
 
 	//glClearColor(0.f, 0.f, 0.f, 1.0f); // nice background color, but not black
 	glClearColor(0.33, 0.39, 0.49, 1.0); //VTT4D background
+	//glClearColor(1.f, 1.f, 1.f, 1.f); //VTT4D background
 
 	glEnable(GL_MULTISAMPLE);
 
