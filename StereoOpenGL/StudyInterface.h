@@ -74,7 +74,7 @@ private:
 	bool m_bStudyMode;
 	bool m_bPaused;
 	bool m_bShowStimulus;
-
+	bool m_bBlockInput;
 	bool m_bLockViewCOP;
 
 	float m_fCOPDist;

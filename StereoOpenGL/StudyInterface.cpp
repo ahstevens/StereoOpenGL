@@ -15,6 +15,7 @@ StudyInterface::StudyInterface()
 	, m_bStudyMode(false)
 	, m_bPaused(false)
 	, m_bShowStimulus(true)
+	, m_bBlockInput(false)
 	, m_bLockViewCOP(false)
 	, m_Generator(std::random_device()())
 	, m_AngleDistribution(std::uniform_int_distribution<int>(10, 20))
@@ -58,7 +59,7 @@ void StudyInterface::reset()
 {
 	m_bStudyMode = false;
 	m_bPaused = false;
-
+	m_bBlockInput = false;
 	m_bLockViewCOP = false;
 
 	m_strServerAddress = "192.168.";
@@ -127,6 +128,9 @@ void StudyInterface::update()
 
 	if (m_bStudyMode)
 	{
+		if (elapsedStim > m_fStimulusTime)
+			m_bBlockInput = false;
+
 		if (elapsedStim >= 0.f && elapsedStim <= m_fStimulusTime)
 			m_bShowStimulus = true;
 		else
@@ -231,10 +235,10 @@ void StudyInterface::begin()
 	for (auto a : m_vfAngleConditions)
 		//for (auto d : m_vfDistanceConditions)
 		{
-			m_vExperimentConditions.push_back({ m_BoolDistribution(m_Generator) ? a : -a, 1.f, 90 + m_AngleDistribution(m_Generator), m_fHingeSize, glm::vec3(0.f, 0.f, m_fHingeSize / 2.f), true });
-			m_vExperimentConditions.push_back({ m_BoolDistribution(m_Generator) ? a : -a, 1.f, 90 - m_AngleDistribution(m_Generator), m_fHingeSize, glm::vec3(0.f, 0.f, m_fHingeSize / 2.f), true });
-			//m_vExperimentConditions.push_back({ m_BoolDistribution(m_Generator) ? a : -a, d, 90 + m_AngleDistribution(m_Generator), m_fHingeSize, glm::vec3(0.f, 0.f, m_fHingeSize / 2.f), false });
-			//m_vExperimentConditions.push_back({ m_BoolDistribution(m_Generator) ? a : -a, d, 90 - m_AngleDistribution(m_Generator), m_fHingeSize, glm::vec3(0.f, 0.f, m_fHingeSize / 2.f), false });
+			m_vExperimentConditions.push_back({ m_BoolDistribution(m_Generator) ? a : -a, 1.f, 90 + m_AngleDistribution(m_Generator), m_fHingeSize, glm::vec3(0.f, 0.f, -m_fHingeSize / 2.f), true });
+			m_vExperimentConditions.push_back({ m_BoolDistribution(m_Generator) ? a : -a, 1.f, 90 - m_AngleDistribution(m_Generator), m_fHingeSize, glm::vec3(0.f, 0.f, -m_fHingeSize / 2.f), true });
+			//m_vExperimentConditions.push_back({ m_BoolDistribution(m_Generator) ? a : -a, d, 90 + m_AngleDistribution(m_Generator), m_fHingeSize, glm::vec3(0.f, 0.f, -m_fHingeSize / 2.f), false });
+			//m_vExperimentConditions.push_back({ m_BoolDistribution(m_Generator) ? a : -a, d, 90 - m_AngleDistribution(m_Generator), m_fHingeSize, glm::vec3(0.f, 0.f, -m_fHingeSize / 2.f), false });
 		}
 		
 	
@@ -289,6 +293,7 @@ void StudyInterface::next(StudyResponse response)
 	else
 	{
 		m_tStimulusStart = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(static_cast<int>(m_fStimulusDelay * 1000.f));
+		m_bBlockInput = true;
 	}
 }
 
@@ -353,6 +358,8 @@ void StudyInterface::loadCondition()
 		m_tStimulusStart =  std::chrono::high_resolution_clock::now();
 
 	m_tStimulusStart += std::chrono::milliseconds(static_cast<int>(m_fStimulusDelay * 1000.f));
+
+	m_bBlockInput = true;
 }
 
 bool StudyInterface::moveScreen(float viewAngle, bool forceMove)
@@ -376,6 +383,9 @@ bool StudyInterface::moveScreen(float viewAngle, bool forceMove)
 
 void StudyInterface::receive(void * data)
 {
+	if (m_bBlockInput)
+		return;
+
 	int eventData[2];
 
 	memcpy(&eventData, data, sizeof(int) * 2);
@@ -538,6 +548,15 @@ void StudyInterface::receive(void * data)
 						return p.desc.compare("Name") == 0;
 					}));
 				}
+
+				if (eventData[1] == GLFW_KEY_R)
+					reset();
+
+				if (eventData[1] == GLFW_KEY_HOME)
+				{
+					m_bStudyMode = true;
+					begin();
+				}
 			}
 
 			if (eventData[1] == GLFW_KEY_F8)
@@ -559,15 +578,6 @@ void StudyInterface::receive(void * data)
 				{
 					Renderer::getInstance().showMessage("Already attempting connection with " + m_strServerAddress + " port " + std::to_string(m_uiServerPort));
 				}
-			}
-
-			if (eventData[1] == GLFW_KEY_R && !m_pEditParam && !m_bStudyMode)
-				reset();
-
-			if (eventData[1] == GLFW_KEY_HOME && !m_pEditParam && !m_bStudyMode)
-			{
-				m_bStudyMode = true;
-				begin();
 			}
 		}
 	}
