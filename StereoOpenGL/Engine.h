@@ -39,7 +39,7 @@ private:
 
 	bool m_bGLInitialized;
 	bool m_bShowDiagnostics;
-	bool m_bStudyMode;
+	bool m_bShowDiagram;
 
 	GLFWwindow *m_pMainWindow;
 	glm::ivec2 m_ivec2MainWindowSize;

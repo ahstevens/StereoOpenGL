@@ -19,6 +19,8 @@ public:
 	void setProjectionAngle(float angle);
 	float getEyeSeparation();
 	void setEyeSeparation(float dist);
+	float getHingeAngle();
+	void setHingeAngle(float angle);
 
 private:
 	void drawOBJ(std::vector<glm::vec3> obj, glm::vec4 col);

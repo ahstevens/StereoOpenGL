@@ -77,13 +77,13 @@ private:
 
 	bool m_bLockViewCOP;
 
-	float m_fCurrentScreenAngle;
-
 	float m_fCOPDist;
 	float m_fCOPAngle;
 	float m_fEyeSep;
 	float m_fViewDist;
 	float m_fViewAngle;
+
+	float m_fHingeSize;
 
 	std::default_random_engine m_Generator;
 	std::uniform_int_distribution<int> m_AngleDistribution;
@@ -94,8 +94,10 @@ private:
 
 	std::vector<float> m_vfAngleConditions;
 	std::vector<float> m_vfDistanceConditions;
+	std::vector<bool> m_vbFishtankConditions;
 
 	std::vector<StudyCondition> m_vExperimentConditions;
+	unsigned m_nTrials;
 
 	std::string m_strLastResponse;
 	int m_nReversals;
@@ -116,6 +118,7 @@ private:
 	void next(StudyResponse response);
 	void writeToLog(StudyResponse response);
 	void loadCondition();
+	bool moveScreen(float viewAngle, bool forceMove = false);
 	void receive(void* data);
 };
 

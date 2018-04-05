@@ -159,6 +159,16 @@ void UntrackedStereoDiagram::setEyeSeparation(float dist)
 		m_fEyeSeparation = dist;
 }
 
+float UntrackedStereoDiagram::getHingeAngle()
+{
+	return m_fHingeAngle;
+}
+
+void UntrackedStereoDiagram::setHingeAngle(float angle)
+{
+	m_fHingeAngle = angle;
+}
+
 void UntrackedStereoDiagram::drawOBJ(std::vector<glm::vec3> obj, glm::vec4 col)
 {
 	unsigned int i = 0;

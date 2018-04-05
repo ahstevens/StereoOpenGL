@@ -17,7 +17,7 @@ float							g_fDisplayDiag = 27.f * INTOCM; // physical display diagonal measure
 glm::vec3						g_vec3ScreenPos(0.f, 0.f, 0.f);
 glm::vec3						g_vec3ScreenNormal(0.f, 0.f, 1.f);
 glm::vec3						g_vec3ScreenUp(0.f, 1.f, 0.f);
-bool							g_bStereo = true;
+bool							g_bStereo = false;
 
 
 //-----------------------------------------------------------------------------
@@ -98,7 +98,7 @@ Engine::Engine(int argc, char *argv[], int mode)
 	, m_pDiagram(NULL)
 	, m_pStudyInterface(NULL)
 	, m_bShowDiagnostics(false)
-	, m_bStudyMode(false)
+	, m_bShowDiagram(false)
 {
 };
 
@@ -339,8 +339,6 @@ void Engine::RunMainLoop()
 		render();
 		m_msRenderTime = clock::now() - a;
 	}
-
-	Shutdown();
 }
 
 
@@ -394,8 +392,6 @@ void Engine::makeScene()
 	//Renderer::getInstance().drawPrimitiveCustom("torus", glm::translate(glm::mat4(), glm::vec3(x, y, z)) * glm::rotate(glm::mat4(), glm::radians(angle), glm::vec3(0.f, 1.f, 0.f)), "shadow");
 	//Renderer::getInstance().drawPrimitiveCustom("box", glm::translate(glm::mat4(), glm::vec3(x, y, z)) * glm::rotate(glm::mat4(), glm::radians(-angle), glm::vec3(0.f, 1.f, 0.f)) * glm::scale(glm::mat4(), glm::vec3(0.5f)), "shadow");
 
-	//m_pDiagram->draw();
-
 	//g_pHinge->drawShadow();
 	//
 	//float sizer = g_fDisplayDiag / sqrt(glm::dot(glm::vec2(m_ivec2MainWindowSize), glm::vec2(m_ivec2MainWindowSize)));
@@ -428,7 +424,10 @@ void Engine::makeScene()
 	//	glm::translate(glm::mat4(), glm::vec3(g_pHinge->getLength() * 0.75f, cubeSize / 2.f - screenSize_cm.y / 2.f, -5.f-g_pHinge->getLength())) * glm::scale(glm::mat4(), glm::vec3(cubeSize)),
 	//	"shadow");
 
-	m_pStudyInterface->draw();
+	if (m_bShowDiagram)
+		m_pDiagram->draw();
+	else
+		m_pStudyInterface->draw();
 
 	if (m_bShowDiagnostics)
 		drawDiagnostics();

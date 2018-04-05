@@ -10,6 +10,7 @@
 StudyInterface::StudyInterface()
 	: m_pSocket(NULL)
 	, m_pHinge(NULL)
+	, m_fHingeSize(10.f)
 	, m_pEditParam(NULL)
 	, m_bStudyMode(false)
 	, m_bPaused(false)
@@ -64,8 +65,6 @@ void StudyInterface::reset()
 	m_uiServerPort = 5005;
 
 	m_strName = "NONAME";
-
-	m_fCurrentScreenAngle = 0.f;
 
 	m_fViewAngle = 0.f;
 	m_fViewDist = 57.f;
@@ -141,9 +140,7 @@ void StudyInterface::update()
 	{
 		if (m_SocketFuture.get())
 		{
-			if (m_pSocket->send("0,2.5"))
-				m_fCurrentScreenAngle = 0.f;
-
+			moveScreen(0, true);
 			Renderer::getInstance().showMessage("Successfully connected to " + m_strServerAddress + " port " + std::to_string(m_uiServerPort) + " successfully!");
 		}
 		else
@@ -233,13 +230,14 @@ void StudyInterface::begin()
 {
 	for (auto a : m_vfAngleConditions)
 		for (auto d : m_vfDistanceConditions)
+			for (auto ft : m_vbFishtankConditions)
 		{
-			m_vExperimentConditions.push_back({ m_BoolDistribution(m_Generator) ? a : -a, d, 90 + m_AngleDistribution(m_Generator), 10.f, glm::vec3(0.f, 0.f, -5.f), true });
-			m_vExperimentConditions.push_back({ m_BoolDistribution(m_Generator) ? a : -a, d, 90 - m_AngleDistribution(m_Generator), 10.f, glm::vec3(0.f, 0.f, -5.f), true });
-			//m_vExperimentConditions.push_back({ m_BoolDistribution(m_Generator) ? a : -a, d, 90 + m_AngleDistribution(m_Generator), 10.f, glm::vec3(0.f, 0.f, -5.f), false });
-			//m_vExperimentConditions.push_back({ m_BoolDistribution(m_Generator) ? a : -a, d, 90 - m_AngleDistribution(m_Generator), 10.f, glm::vec3(0.f, 0.f, -5.f), false });
+			m_vExperimentConditions.push_back({ m_BoolDistribution(m_Generator) ? a : -a, d, 90 + m_AngleDistribution(m_Generator), m_fHingeSize, glm::vec3(0.f, 0.f, m_fHingeSize / 2.f), ft });
+			m_vExperimentConditions.push_back({ m_BoolDistribution(m_Generator) ? a : -a, d, 90 - m_AngleDistribution(m_Generator), m_fHingeSize, glm::vec3(0.f, 0.f, m_fHingeSize / 2.f), ft });
 		}
 	
+	m_nTrials = m_vExperimentConditions.size();
+
 	std::shuffle(m_vExperimentConditions.begin(), m_vExperimentConditions.end(), m_Generator);
 
 	m_strLastResponse = std::string();
@@ -279,11 +277,7 @@ void StudyInterface::next(StudyResponse response)
 
 		m_vExperimentConditions.pop_back();
 
-		if (m_pSocket->send("0," + std::to_string(m_fMoveTime)))
-		{
-			m_fCurrentScreenAngle = 0.f;
-			m_tMoveStart = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(250);
-		}
+		moveScreen(0);
 
 		m_bPaused = true;
 
@@ -298,8 +292,7 @@ void StudyInterface::next(StudyResponse response)
 
 void StudyInterface::end()
 {
-	m_pSocket->send("0,2.5");
-	m_fCurrentScreenAngle = 0.f;
+	moveScreen(0);
 	m_bStudyMode = false;
 	DataLogger::getInstance().closeLog();
 }
@@ -320,7 +313,7 @@ float StudyInterface::getEyeSep()
 void StudyInterface::writeToLog(StudyResponse response)
 {
 	std::string logEntry;
-	logEntry += std::to_string((m_vfAngleConditions.size() * m_vfDistanceConditions.size()) - m_vExperimentConditions.size());
+	logEntry += std::to_string(m_nTrials - m_vExperimentConditions.size());
 	logEntry += ",";
 	logEntry += std::to_string(m_vExperimentConditions.back().viewAngle);
 	logEntry += ",";
@@ -352,20 +345,31 @@ void StudyInterface::loadCondition()
 
 	m_bLockViewCOP = m_vExperimentConditions.back().matchedView;
 
-	if (m_fCurrentScreenAngle != -m_vExperimentConditions.back().viewAngle)
-	{
-		m_fCurrentScreenAngle = -m_vExperimentConditions.back().viewAngle;
-
-		m_pSocket->send((int)-m_vExperimentConditions.back().viewAngle + "," + std::to_string(m_fMoveTime));
-		m_tMoveStart = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(250);
-
-		m_tStimulusStart = m_tMoveStart + std::chrono::milliseconds(static_cast<int>((m_fMoveTime + m_fStimulusDelay) * 1000.f));
-	}
+	if (moveScreen(m_vExperimentConditions.back().viewAngle))
+		m_tStimulusStart = m_tMoveStart + std::chrono::milliseconds(static_cast<int>(m_fMoveTime * 1000.f));
 	else
-	{
-		m_tStimulusStart = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(static_cast<int>(m_fStimulusDelay * 1000.f));
-	}
+		m_tStimulusStart =  std::chrono::high_resolution_clock::now();
 
+	m_tStimulusStart += std::chrono::milliseconds(static_cast<int>(m_fStimulusDelay * 1000.f));
+}
+
+bool StudyInterface::moveScreen(float viewAngle, bool forceMove)
+{
+	if (m_fViewAngle == viewAngle && !forceMove)
+		return false;
+
+	m_fLastAngle = m_fViewAngle;
+	m_fTargetAngle = viewAngle;
+
+	// The display angle should be the negative of the viewing angle since our viewpoint is fixed
+	std::stringstream ss;
+	ss.precision(2);
+	ss << -viewAngle << "," << m_fMoveTime;
+	
+	m_pSocket->send(ss.str());
+	m_tMoveStart = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(250);
+
+	return true;
 }
 
 void StudyInterface::receive(void * data)
@@ -466,18 +470,7 @@ void StudyInterface::receive(void * data)
 
 					if (m_pEditParam->desc.compare("View Angle (deg)") == 0)
 					{
-						m_fLastAngle = m_fViewAngle;
-						m_fTargetAngle = std::stof(m_pEditParam->buf);
-
-						// The display angle should be the negative of the viewing angle since our viewpoint is fixed
-						std::string commandAngle = m_pEditParam->buf;
-						if (commandAngle[0] == '-')
-							commandAngle.erase(0, 1);
-						else
-							commandAngle.insert(0, 1, '-');
-
-						m_pSocket->send(commandAngle + "," + std::to_string(m_fMoveTime));
-						m_tMoveStart = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(250);
+						moveScreen(std::stof(m_pEditParam->buf));
 					}
 
 					if (m_pEditParam->desc.compare("Display Move Time (sec)") == 0)
