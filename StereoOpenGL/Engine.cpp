@@ -1,5 +1,3 @@
-
-
 #include "Engine.h"
 #include "DebugDrawer.h"
 
@@ -95,10 +93,8 @@ Engine::Engine(int argc, char *argv[], int mode)
 	, m_pMainWindow(NULL)
 	, m_pLeftEyeFramebuffer(NULL)
 	, m_pRightEyeFramebuffer(NULL)
-	, m_pDiagram(NULL)
 	, m_pStudyInterface(NULL)
 	, m_bShowDiagnostics(false)
-	, m_bShowDiagram(false)
 {
 };
 
@@ -151,6 +147,13 @@ bool Engine::init()
 	if (!Renderer::getInstance().init())
 		return false;
 
+	createUIView();
+	createMonoView();
+	createStereoViews();
+
+	Renderer::getInstance().addTexture(new GLTexture("woodfloor.png", false));
+	Renderer::getInstance().addTexture(new GLTexture("wallpaper.png", false));
+
 	float sizer = g_fDisplayDiag / sqrt(glm::dot(glm::vec2(m_ivec2MainWindowSize), glm::vec2(m_ivec2MainWindowSize)));
 
 	glm::vec2 screenSize_cm = glm::vec2(m_ivec2MainWindowSize) * sizer;
@@ -162,20 +165,10 @@ bool Engine::init()
 		glm::vec4(g_vec3ScreenPos, 1.f)
 	);
 
-	m_pDiagram = new UntrackedStereoDiagram(screenTrans, m_ivec2MainWindowSize);
-
-	Renderer::getInstance().addTexture(new GLTexture("woodfloor.png", false));
-	Renderer::getInstance().addTexture(new GLTexture("wallpaper.png", false));
-
 	m_pStudyInterface = new StudyInterface();
-	m_pStudyInterface->init(m_ivec2MainWindowSize, g_fDisplayDiag);
+	m_pStudyInterface->init(m_ivec2MainWindowSize, screenTrans);
 	GLFWInputBroadcaster::getInstance().addObserver(m_pStudyInterface);
 
-
-	createUIView();
-	createMonoView();
-	createStereoViews();
-	
 	return true;
 }
 
@@ -229,9 +222,6 @@ bool Engine::initGL(bool stereoContext)
 //-----------------------------------------------------------------------------
 void Engine::Shutdown()
 {
-	if (m_pDiagram)
-		delete m_pDiagram;
-
 	if (m_pStudyInterface)
 	{
 		GLFWInputBroadcaster::getInstance().removeObserver(m_pStudyInterface);
@@ -283,25 +273,6 @@ void Engine::receive(void * data)
 
 	if (eventData[0] == GLFWInputBroadcaster::EVENT::KEY_DOWN || eventData[0] == GLFWInputBroadcaster::EVENT::KEY_HOLD)
 	{	
-		if (eventData[1] == GLFW_KEY_MINUS)
-			m_pDiagram->setEyeSeparation(m_pDiagram->getEyeSeparation() - 0.1f);
-		if (eventData[1] == GLFW_KEY_EQUAL)
-			m_pDiagram->setEyeSeparation(m_pDiagram->getEyeSeparation() + 0.1f);
-		
-		if (eventData[1] == GLFW_KEY_LEFT_BRACKET)
-			m_pDiagram->setViewAngle(m_pDiagram->getViewAngle() - 1.f);
-		if (eventData[1] == GLFW_KEY_RIGHT_BRACKET)
-			m_pDiagram->setViewAngle(m_pDiagram->getViewAngle() + 1.f);
-
-		if (eventData[1] == GLFW_KEY_9)
-			m_pDiagram->setViewDistance(m_pDiagram->getViewDistance() - 0.1f);
-		if (eventData[1] == GLFW_KEY_0)
-			m_pDiagram->setViewDistance(m_pDiagram->getViewDistance() + 0.1f);
-
-		if (eventData[1] == GLFW_KEY_COMMA)
-			m_pDiagram->setProjectionAngle(m_pDiagram->getProjectionAngle() - 1.f);
-		if (eventData[1] == GLFW_KEY_PERIOD)
-			m_pDiagram->setProjectionAngle(m_pDiagram->getProjectionAngle() + 1.f);
 
 	}
 }
@@ -424,10 +395,7 @@ void Engine::makeScene()
 	//	glm::translate(glm::mat4(), glm::vec3(g_pHinge->getLength() * 0.75f, cubeSize / 2.f - screenSize_cm.y / 2.f, -5.f-g_pHinge->getLength())) * glm::scale(glm::mat4(), glm::vec3(cubeSize)),
 	//	"shadow");
 
-	if (m_bShowDiagram)
-		m_pDiagram->draw();
-	else
-		m_pStudyInterface->draw();
+	m_pStudyInterface->draw();
 
 	if (m_bShowDiagnostics)
 		drawDiagnostics();

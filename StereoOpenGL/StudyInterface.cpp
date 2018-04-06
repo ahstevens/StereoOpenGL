@@ -12,11 +12,13 @@ StudyInterface::StudyInterface()
 	, m_pHinge(NULL)
 	, m_fHingeSize(10.f)
 	, m_pEditParam(NULL)
+	, m_pDiagram(NULL)
 	, m_bStudyMode(false)
 	, m_bPaused(false)
 	, m_bShowStimulus(true)
 	, m_bBlockInput(false)
 	, m_bLockViewCOP(false)
+	, m_bShowDiagram(false)
 	, m_Generator(std::random_device()())
 	, m_AngleDistribution(std::uniform_int_distribution<int>(10, 20))
 	, m_BoolDistribution(std::uniform_int_distribution<int>(0, 1))
@@ -34,17 +36,17 @@ StudyInterface::~StudyInterface()
 
 	if (m_pHinge)
 		delete m_pHinge;
+
+	if (m_pDiagram)
+		delete m_pDiagram;
 }
 
-void StudyInterface::init(glm::ivec2 screenDims, float screenDiag)
+void StudyInterface::init(glm::ivec2 screenRes, glm::mat4 worldToScreenTransform)
 {
 	DataLogger::getInstance().setLogDirectory("logs");
 
-	m_ivec2Screen = screenDims;
-
-	float sizer = screenDiag / sqrt(glm::dot(glm::vec2(screenDims), glm::vec2(screenDims)));
-
-	m_vec2Screen = glm::vec2(screenDims) * sizer;
+	m_ivec2Screen = screenRes;
+	m_mat4Screen = worldToScreenTransform;
 
 	reset();
 
@@ -53,6 +55,9 @@ void StudyInterface::init(glm::ivec2 screenDims, float screenDiag)
 
 	if (m_pHinge == NULL)
 		m_pHinge = new Hinge(m_fHingeSize, 90.f);
+
+	if (m_pDiagram == NULL)
+		m_pDiagram = new ViewingConditionsDiagram(m_mat4Screen, m_ivec2Screen);
 }
 
 void StudyInterface::reset()
@@ -152,8 +157,12 @@ void StudyInterface::update()
 
 void StudyInterface::draw()
 {
-	if (m_pHinge && m_bShowStimulus && !m_bPaused)
+	if (m_bShowDiagram)
+		m_pDiagram->draw();
+	else if (m_bShowStimulus && !m_bPaused)
 		m_pHinge->draw();
+
+
 
 	if (m_pEditParam)
 	{
@@ -580,6 +589,11 @@ void StudyInterface::receive(void * data)
 					Renderer::getInstance().showMessage("Already attempting connection with " + m_strServerAddress + " port " + std::to_string(m_uiServerPort));
 				}
 			}
+
+			if (eventData[1] == GLFW_KEY_F10)
+			{
+				m_bShowDiagram = !m_bShowDiagram;
+			}
 		}
 	}
 
@@ -604,6 +618,21 @@ void StudyInterface::receive(void * data)
 				m_pHinge->setAngle(m_pHinge->getAngle() + 1.f);
 			if (eventData[1] == GLFW_KEY_RIGHT_BRACKET)
 				m_pHinge->setAngle(m_pHinge->getAngle() - 1.f);
+
+			if (eventData[1] == GLFW_KEY_MINUS)
+				m_pDiagram->setEyeSeparation(m_pDiagram->getEyeSeparation() - 0.1f);
+			if (eventData[1] == GLFW_KEY_EQUAL)
+				m_pDiagram->setEyeSeparation(m_pDiagram->getEyeSeparation() + 0.1f);
+
+			if (eventData[1] == GLFW_KEY_9)
+				m_pDiagram->setViewDistance(m_pDiagram->getViewDistance() - 0.1f);
+			if (eventData[1] == GLFW_KEY_0)
+				m_pDiagram->setViewDistance(m_pDiagram->getViewDistance() + 0.1f);
+
+			if (eventData[1] == GLFW_KEY_COMMA)
+				m_pDiagram->setProjectionAngle(m_pDiagram->getProjectionAngle() - 1.f);
+			if (eventData[1] == GLFW_KEY_PERIOD)
+				m_pDiagram->setProjectionAngle(m_pDiagram->getProjectionAngle() + 1.f);
 		}
 	}
 }

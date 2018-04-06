@@ -3,11 +3,12 @@
 #include <glm.hpp>
 #include <vector>
 
-class UntrackedStereoDiagram
+class ViewingConditionsDiagram
 {
+	friend class StudyInterface;
 public:	
-	UntrackedStereoDiagram(glm::mat4 screenBasis, glm::ivec2 screenResolution);
-	~UntrackedStereoDiagram();
+	ViewingConditionsDiagram(glm::mat4 screenBasis, glm::ivec2 screenResolution);
+	~ViewingConditionsDiagram();
 
 	void draw();
 

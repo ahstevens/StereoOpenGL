@@ -3,6 +3,7 @@
 #include "WinsockClient.h"
 #include "GLFWInputBroadcaster.h"
 #include "Hinge.h"
+#include "ViewingConditionsDiagram.h"
 
 #include <glm.hpp>
 #include <chrono>
@@ -21,7 +22,7 @@ public:
 	StudyInterface();
 	~StudyInterface();
 
-	void init(glm::ivec2 screenDims, float screenDiag);
+	void init(glm::ivec2 screenRes, glm::mat4 worldToScreenTransform);
 
 	void reset();
 
@@ -64,7 +65,7 @@ private:
 	Hinge* m_pHinge;
 
 	glm::ivec2 m_ivec2Screen;
-	glm::vec2 m_vec2Screen;
+	glm::mat4 m_mat4Screen;
 
 	std::string m_strServerAddress;
 	unsigned m_uiServerPort;
@@ -76,6 +77,7 @@ private:
 	bool m_bShowStimulus;
 	bool m_bBlockInput;
 	bool m_bLockViewCOP;
+	bool m_bShowDiagram;
 
 	float m_fCOPDist;
 	float m_fCOPAngle;
@@ -109,6 +111,8 @@ private:
 
 	std::vector<StudyParam> m_vParams;
 	StudyParam* m_pEditParam;
+
+	ViewingConditionsDiagram* m_pDiagram;
 
 private:
 	void next(StudyResponse response);

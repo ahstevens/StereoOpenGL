@@ -1,4 +1,4 @@
-#include "UntrackedStereoDiagram.h"
+#include "ViewingConditionsDiagram.h"
 #include <GL/glew.h>
 #include "DebugDrawer.h"
 #include "Renderer.h"
@@ -6,7 +6,7 @@
 #include <gtx/vector_angle.hpp>
 #include <sstream>
 
-UntrackedStereoDiagram::UntrackedStereoDiagram(glm::mat4 screenBasis, glm::ivec2 screenResolution)
+ViewingConditionsDiagram::ViewingConditionsDiagram(glm::mat4 screenBasis, glm::ivec2 screenResolution)
 	: m_mat4ScreenBasis(screenBasis)
 	, m_ivec2ScreenRes(screenResolution)
 	, m_fOriginScreenDist(5.f)
@@ -29,11 +29,11 @@ UntrackedStereoDiagram::UntrackedStereoDiagram(glm::mat4 screenBasis, glm::ivec2
 	m_vec3ObjOrigin = glm::translate(m_mat4ScreenBasisOrtho, glm::vec3(0.f, m_fOriginScreenDist, 0.f))[3];
 }
 
-UntrackedStereoDiagram::~UntrackedStereoDiagram()
+ViewingConditionsDiagram::~ViewingConditionsDiagram()
 {
 }
 
-void UntrackedStereoDiagram::draw()
+void ViewingConditionsDiagram::draw()
 {
 	glm::vec3 screenOrigin = glm::vec3(m_mat4ScreenBasis[3]);
 
@@ -115,61 +115,61 @@ void UntrackedStereoDiagram::draw()
 	}
 }
 
-float UntrackedStereoDiagram::getViewAngle()
+float ViewingConditionsDiagram::getViewAngle()
 {
 	return m_fViewingAngle;
 }
 
-void UntrackedStereoDiagram::setViewAngle(float angle)
+void ViewingConditionsDiagram::setViewAngle(float angle)
 {
 	if (angle > -90.f && angle < 90.f)
 		m_fViewingAngle = angle;
 }
 
-float UntrackedStereoDiagram::getViewDistance()
+float ViewingConditionsDiagram::getViewDistance()
 {
 	return m_fViewingDistance;
 }
 
-void UntrackedStereoDiagram::setViewDistance(float dist)
+void ViewingConditionsDiagram::setViewDistance(float dist)
 {
 	if (dist > 0.f)
 		m_fViewingDistance = dist;
 }
 
-float UntrackedStereoDiagram::getProjectionAngle()
+float ViewingConditionsDiagram::getProjectionAngle()
 {
 	return m_fProjectionAngle;
 }
 
-void UntrackedStereoDiagram::setProjectionAngle(float angle)
+void ViewingConditionsDiagram::setProjectionAngle(float angle)
 {
 	if (angle > -90.f && angle < 90.f)
 		m_fProjectionAngle = angle;
 }
 
-float UntrackedStereoDiagram::getEyeSeparation()
+float ViewingConditionsDiagram::getEyeSeparation()
 {
 	return m_fEyeSeparation;
 }
 
-void UntrackedStereoDiagram::setEyeSeparation(float dist)
+void ViewingConditionsDiagram::setEyeSeparation(float dist)
 {
 	if (dist >= 0.f )
 		m_fEyeSeparation = dist;
 }
 
-float UntrackedStereoDiagram::getHingeAngle()
+float ViewingConditionsDiagram::getHingeAngle()
 {
 	return m_fHingeAngle;
 }
 
-void UntrackedStereoDiagram::setHingeAngle(float angle)
+void ViewingConditionsDiagram::setHingeAngle(float angle)
 {
 	m_fHingeAngle = angle;
 }
 
-void UntrackedStereoDiagram::drawOBJ(std::vector<glm::vec3> obj, glm::vec4 col)
+void ViewingConditionsDiagram::drawOBJ(std::vector<glm::vec3> obj, glm::vec4 col)
 {
 	unsigned int i = 0;
 	for (auto pt : obj)
@@ -194,7 +194,7 @@ void UntrackedStereoDiagram::drawOBJ(std::vector<glm::vec3> obj, glm::vec4 col)
 		DebugDrawer::getInstance().drawLine(obj[i], obj[i + 1], col);
 }
 
-void UntrackedStereoDiagram::drawEye(glm::vec3 eyePos, glm::vec4 eyeCol, glm::vec4 rayCol, std::vector<glm::vec3> obj)
+void ViewingConditionsDiagram::drawEye(glm::vec3 eyePos, glm::vec4 eyeCol, glm::vec4 rayCol, std::vector<glm::vec3> obj)
 {
 	float eyerad = glm::length(m_mat4ScreenBasis[1]) / 15.f;
 
@@ -207,7 +207,7 @@ void UntrackedStereoDiagram::drawEye(glm::vec3 eyePos, glm::vec4 eyeCol, glm::ve
 		DebugDrawer::getInstance().drawLine(eyePos, pt, rayCol);
 }
 
-std::vector<glm::vec3> UntrackedStereoDiagram::getHinge()
+std::vector<glm::vec3> ViewingConditionsDiagram::getHinge()
 {
 	float s = 2.f * m_fHingeLength * glm::tan(glm::radians(m_fHingeAngle) / 2.f);
 	glm::vec3 p1 = m_vec3ObjOrigin - glm::vec3(m_mat4ScreenBasisOrtho[1]) * m_fHingeLength - glm::vec3(m_mat4ScreenBasisOrtho[0]) * (s / 2.f);
@@ -217,7 +217,7 @@ std::vector<glm::vec3> UntrackedStereoDiagram::getHinge()
 	return std::vector<glm::vec3>({ p1, p2, p3 });
 }
 
-void UntrackedStereoDiagram::drawHingeAngle(std::vector<glm::vec3> pts, glm::vec4 col)
+void ViewingConditionsDiagram::drawHingeAngle(std::vector<glm::vec3> pts, glm::vec4 col)
 {
 	float rad = 0.3f;
 
@@ -257,7 +257,7 @@ void UntrackedStereoDiagram::drawHingeAngle(std::vector<glm::vec3> pts, glm::vec
 	);
 }
 
-std::vector<glm::vec3> UntrackedStereoDiagram::transformMonoscopicPoints(glm::vec3 centerOfProj, glm::vec3 viewPos, std::vector<glm::vec3> obj)
+std::vector<glm::vec3> ViewingConditionsDiagram::transformMonoscopicPoints(glm::vec3 centerOfProj, glm::vec3 viewPos, std::vector<glm::vec3> obj)
 {
 	auto intPts = getScreenIntersections(centerOfProj, obj);
 
@@ -275,7 +275,7 @@ std::vector<glm::vec3> UntrackedStereoDiagram::transformMonoscopicPoints(glm::ve
 	return ret;
 }
 
-std::vector<glm::vec3> UntrackedStereoDiagram::transformStereoscopicPoints(glm::vec3 centerOfProjL, glm::vec3 centerOfProjR, glm::vec3 viewPosL, glm::vec3 viewPosR, std::vector<glm::vec3> obj)
+std::vector<glm::vec3> ViewingConditionsDiagram::transformStereoscopicPoints(glm::vec3 centerOfProjL, glm::vec3 centerOfProjR, glm::vec3 viewPosL, glm::vec3 viewPosR, std::vector<glm::vec3> obj)
 {
 	std::vector<glm::vec3> iL(getScreenIntersections(centerOfProjL, obj));
 	std::vector<glm::vec3> iR(getScreenIntersections(centerOfProjR, obj));
@@ -292,7 +292,7 @@ std::vector<glm::vec3> UntrackedStereoDiagram::transformStereoscopicPoints(glm::
 	return ret;
 }
 
-std::vector<glm::vec3> UntrackedStereoDiagram::getScreenIntersections(glm::vec3 centerOfProjection, std::vector<glm::vec3> pts)
+std::vector<glm::vec3> ViewingConditionsDiagram::getScreenIntersections(glm::vec3 centerOfProjection, std::vector<glm::vec3> pts)
 {
 	std::vector<glm::vec3> ret;
 
@@ -314,7 +314,7 @@ Pa = P1 + mua (P2 - P1)
 Pb = P3 + mub (P4 - P3)
 Return false if no solution exists.
 */
-bool UntrackedStereoDiagram::LineLineIntersect(	glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, glm::vec3 p4, glm::vec3 *pa, glm::vec3 *pb, double *mua, double *mub)
+bool ViewingConditionsDiagram::LineLineIntersect(	glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, glm::vec3 p4, glm::vec3 *pa, glm::vec3 *pb, double *mua, double *mub)
 {
 	glm::vec3 p13, p43, p21;
 	double d1343, d4321, d1321, d4343, d2121;

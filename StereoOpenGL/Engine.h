@@ -13,7 +13,6 @@
 
 #include "GLFWInputBroadcaster.h"
 #include "Renderer.h"
-#include "UntrackedStereoDiagram.h"
 #include "StudyInterface.h"
 
 
@@ -39,7 +38,6 @@ private:
 
 	bool m_bGLInitialized;
 	bool m_bShowDiagnostics;
-	bool m_bShowDiagram;
 
 	GLFWwindow *m_pMainWindow;
 	glm::ivec2 m_ivec2MainWindowSize;
@@ -53,7 +51,6 @@ private:
 	Renderer::SceneViewInfo m_sviRightEyeInfo;
 	Renderer::SceneViewInfo m_sviUIInfo;
 
-	UntrackedStereoDiagram*	m_pDiagram;
 	StudyInterface*	m_pStudyInterface;
 
 private:
