@@ -19,6 +19,7 @@ StudyInterface::StudyInterface()
 	, m_bBlockInput(false)
 	, m_bLockViewCOP(false)
 	, m_bShowDiagram(false)
+	, m_bWaitingForResponse(false)
 	, m_Generator(std::random_device()())
 	, m_AngleDistribution(std::uniform_int_distribution<int>(10, 20))
 	, m_BoolDistribution(std::uniform_int_distribution<int>(0, 1))
@@ -66,6 +67,7 @@ void StudyInterface::reset()
 	m_bPaused = false;
 	m_bBlockInput = false;
 	m_bLockViewCOP = false;
+	m_bWaitingForResponse = false;
 
 	m_strServerAddress = "192.168.137.";
 	m_uiServerPort = 5005;
@@ -131,7 +133,12 @@ void StudyInterface::update()
 	if (m_bStudyMode)
 	{
 		if (elapsedStim > m_fStimulusTime)
+		{
 			m_bBlockInput = false;
+
+			if (m_tStimulusStart != std::chrono::high_resolution_clock::time_point())
+				m_bWaitingForResponse = true;
+		}
 
 		if (elapsedStim >= 0.f && elapsedStim <= m_fStimulusTime)
 			m_bShowStimulus = true;
@@ -158,9 +165,13 @@ void StudyInterface::update()
 void StudyInterface::draw()
 {
 	if (m_bShowDiagram)
+	{
 		m_pDiagram->draw();
+	}
 	else if (m_bShowStimulus && !m_bPaused)
+	{
 		m_pHinge->draw();
+	}
 
 
 
@@ -234,6 +245,31 @@ void StudyInterface::draw()
 			);
 		}
 	}
+
+	if (m_bWaitingForResponse)
+	{
+		Renderer::getInstance().drawUIText(
+			"ACUTE",
+			glm::vec4(0.6f, 0.3f, 0.3f, 1.f),
+			glm::vec3(0.f),
+			glm::quat(),
+			m_ivec2Screen.x / 20.f,
+			Renderer::HEIGHT,
+			Renderer::LEFT,
+			Renderer::BOTTOM_LEFT
+		);
+
+		Renderer::getInstance().drawUIText(
+			"OBTUSE",
+			glm::vec4(0.6f, 0.3f, 0.3f, 1.f),
+			glm::vec3(m_ivec2Screen.x, 0.f, 0.f),
+			glm::quat(),
+			m_ivec2Screen.x / 20.f,
+			Renderer::HEIGHT,
+			Renderer::RIGHT,
+			Renderer::BOTTOM_RIGHT
+		);
+	}
 }
 
 void StudyInterface::begin()
@@ -268,6 +304,8 @@ void StudyInterface::begin()
 
 void StudyInterface::next(StudyResponse response)
 {
+	m_bWaitingForResponse = false;
+
 	if (response == ACUTE) // perceived as acute
 	{
 		m_pHinge->setAngle(m_pHinge->getAngle() + m_fStepSize);

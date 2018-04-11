@@ -78,6 +78,7 @@ private:
 	bool m_bBlockInput;
 	bool m_bLockViewCOP;
 	bool m_bShowDiagram;
+	bool m_bWaitingForResponse;
 
 	float m_fCOPDist;
 	float m_fCOPAngle;
