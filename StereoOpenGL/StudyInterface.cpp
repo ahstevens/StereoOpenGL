@@ -20,6 +20,7 @@ StudyInterface::StudyInterface()
 	, m_bLockViewCOP(false)
 	, m_bShowDiagram(false)
 	, m_bWaitingForResponse(false)
+	, m_bDisplayCondition(false)
 	, m_Generator(std::random_device()())
 	, m_AngleDistribution(std::uniform_int_distribution<int>(10, 20))
 	, m_BoolDistribution(std::uniform_int_distribution<int>(0, 1))
@@ -49,8 +50,6 @@ void StudyInterface::init(glm::ivec2 screenRes, glm::mat4 worldToScreenTransform
 	m_ivec2Screen = screenRes;
 	m_mat4Screen = worldToScreenTransform;
 
-	reset();
-
 	if (m_pSocket == NULL)
 		m_pSocket = new WinsockClient();
 
@@ -59,6 +58,8 @@ void StudyInterface::init(glm::ivec2 screenRes, glm::mat4 worldToScreenTransform
 
 	if (m_pDiagram == NULL)
 		m_pDiagram = new ViewingConditionsDiagram(m_mat4Screen, m_ivec2Screen);
+
+	reset();
 }
 
 void StudyInterface::reset()
@@ -78,6 +79,8 @@ void StudyInterface::reset()
 	m_fViewDist = 57.f;
 	m_fEyeSep = 6.7;
 
+	m_pHinge->setPos(glm::vec3(0.f, 0.f, -5.f));
+
 	m_fCOPAngle = m_fViewAngle;
 	m_fCOPDist = m_fViewDist;
 
@@ -85,7 +88,7 @@ void StudyInterface::reset()
 	m_fStepSize = m_fMinStep;
 
 	m_strLastResponse = std::string();
-	m_nReversals = 11; // ignore the first
+	m_nReversals = 1; // ignore the first
 
 	m_vExperimentConditions.clear();
 
@@ -168,12 +171,10 @@ void StudyInterface::draw()
 	{
 		m_pDiagram->draw();
 	}
-	else if (m_bShowStimulus && !m_bPaused)
+	else if ((m_bShowStimulus && !m_bPaused) || m_bDisplayCondition)
 	{
 		m_pHinge->draw();
 	}
-
-
 
 	if (m_pEditParam)
 	{
@@ -270,36 +271,65 @@ void StudyInterface::draw()
 			Renderer::BOTTOM_RIGHT
 		);
 	}
+
+	if (m_bDisplayCondition)
+	{
+		std::stringstream ss;
+		ss.precision(3);
+
+		StudyCondition c = m_vExperimentConditions.back();
+		ss << "Viewing Angle: " << (m_bLockViewCOP ? m_fViewAngle : m_fCOPAngle) << std::endl;
+		ss << "Viewing Distance: " << (m_bLockViewCOP ? m_fViewDist : m_fCOPDist) << std::endl;
+		ss << "Hinge Angle: " << m_pHinge->getAngle() << std::endl;
+		ss << (m_bLockViewCOP ? "Fishtank Mode" : "Untracked Stereo Mode");		
+
+		Renderer::getInstance().drawUIText(
+			ss.str(),
+			glm::vec4(1.f),
+			glm::vec3(m_ivec2Screen.x, 0.f, 0.f),
+			glm::quat(),
+			m_ivec2Screen.x / 10.f,
+			Renderer::HEIGHT,
+			Renderer::RIGHT,
+			Renderer::BOTTOM_RIGHT
+		);
+	}
 }
 
 void StudyInterface::begin()
 {
-	for (auto a : { 0.f, 15.f, 30.f })		// angles
+	generateTrials();
+
+	m_strLastResponse = std::string();
+
+	DataLogger::getInstance().setID(m_strName);
+	DataLogger::getInstance().openLog(m_strName);
+	DataLogger::getInstance().setHeader("trial,view.angle,view.dist.factor,fishtank,start.angle,hinge.length,hinge.z.pos,hinge.angle,response");
+	DataLogger::getInstance().start();
+
+	m_bPaused = true;
+}
+
+void StudyInterface::generateTrials(bool randomOrder)
+{
+	for (auto a : { 0.f })		// angles
 		for (auto d : { 1.f, 0.5f, 2.f })	// distances
 			for (auto f : { true, false })	// fishtank mode (eye-couple perspective)
 			{
 				StudyCondition cond;
 				cond.hingeLen = m_fHingeSize;
 				cond.hingePos = glm::vec3(0.f, 0.f, -m_fHingeSize / 2.f);
-				cond.startAngle = 90 + (m_AngleDistribution(m_Generator) * m_BoolDistribution(m_Generator) ? 1 : -1);
+				cond.startAngle = 90.f + (m_AngleDistribution(m_Generator) * m_BoolDistribution(m_Generator) ? 1.f : -1.f);
 				cond.viewAngle = m_BoolDistribution(m_Generator) ? a : -a;
-				cond.viewDist = d;
+				cond.viewDistFactor = d;
 				cond.matchedView = f;
 				m_vExperimentConditions.push_back(cond);
-			}		
-	
+			}
+
 	m_nTrials = m_vExperimentConditions.size();
 
-	std::shuffle(m_vExperimentConditions.begin(), m_vExperimentConditions.end(), m_Generator);
-
-	m_strLastResponse = std::string();
-
-	DataLogger::getInstance().setID(m_strName);
-	DataLogger::getInstance().openLog(m_strName);
-	DataLogger::getInstance().setHeader("trial,view.angle,view.dist,fishtank,start.angle,hinge.length,hinge.z.pos,hinge.angle,response");
-	DataLogger::getInstance().start();
-
-	m_bPaused = true;
+	if (randomOrder)
+		std::shuffle(m_vExperimentConditions.begin(), m_vExperimentConditions.end(), m_Generator);
 }
 
 void StudyInterface::next(StudyResponse response)
@@ -327,7 +357,7 @@ void StudyInterface::next(StudyResponse response)
 
 	if (m_nReversals == 0)
 	{
-		m_nReversals = 11; // add an extra for initial mistakes, which are not recorded
+		m_nReversals = 1; // add an extra for initial mistakes, which are not recorded
 
 		m_vExperimentConditions.pop_back();
 
@@ -374,7 +404,7 @@ void StudyInterface::writeToLog(StudyResponse response)
 	logEntry += ",";
 	logEntry += std::to_string(m_vExperimentConditions.back().viewAngle);
 	logEntry += ",";
-	logEntry += std::to_string(m_vExperimentConditions.back().viewDist);
+	logEntry += std::to_string(m_vExperimentConditions.back().viewDistFactor);
 	logEntry += ",";
 	logEntry += std::to_string(m_vExperimentConditions.back().matchedView);
 	logEntry += ",";
@@ -392,13 +422,13 @@ void StudyInterface::writeToLog(StudyResponse response)
 	DataLogger::getInstance().logMessage(logEntry);
 }
 
-void StudyInterface::loadCondition()
+void StudyInterface::loadCondition(StudyCondition &c)
 {
-	m_pHinge->setAngle(m_vExperimentConditions.back().startAngle);
-	m_pHinge->setLength(m_vExperimentConditions.back().hingeLen);
-	m_pHinge->setPos(m_vExperimentConditions.back().hingePos);
+	m_pHinge->setAngle(c.startAngle);
+	m_pHinge->setLength(c.hingeLen);
+	m_pHinge->setPos(c.hingePos);
 
-	m_fCOPDist = m_fViewDist * m_vExperimentConditions.back().viewDist;
+	m_fCOPDist = m_fViewDist * c.viewDistFactor;
 
 	m_bLockViewCOP = m_vExperimentConditions.back().matchedView;
 
@@ -433,8 +463,8 @@ bool StudyInterface::moveScreen(float viewAngle, bool forceMove)
 
 void StudyInterface::receive(void * data)
 {
-	if (m_bBlockInput)
-		return;
+	//if (m_bBlockInput)
+	//	return;
 
 	int eventData[2];
 
@@ -461,11 +491,12 @@ void StudyInterface::receive(void * data)
 			if (eventData[1] == GLFW_KEY_SPACE && m_bPaused)
 			{
 				m_bPaused = false;
-				loadCondition();
+				loadCondition(m_vExperimentConditions.back());
 			}
 		}
 		else
 		{
+
 			if (m_pEditParam)
 			{
 				if (eventData[1] == GLFW_KEY_BACKSPACE && m_pEditParam->buf.length() > 0)
@@ -634,6 +665,11 @@ void StudyInterface::receive(void * data)
 			{
 				m_bShowDiagram = !m_bShowDiagram;
 			}
+
+			if (eventData[1] == GLFW_KEY_KP_ENTER)
+			{
+				m_bDisplayCondition = !m_bDisplayCondition;
+			}
 		}
 	}
 
@@ -645,19 +681,19 @@ void StudyInterface::receive(void * data)
 		if (!m_bStudyMode)
 		{
 			if (eventData[1] == GLFW_KEY_LEFT)
-				m_fCOPAngle -= angleDelta;
+				m_pHinge->setAngle(m_pHinge->getAngle() + 1.f);
 			if (eventData[1] == GLFW_KEY_RIGHT)
+				m_pHinge->setAngle(m_pHinge->getAngle() - 1.f);
+
+			if (eventData[1] == GLFW_KEY_LEFT_BRACKET)
+				m_fCOPAngle -= angleDelta;
+			if (eventData[1] == GLFW_KEY_RIGHT_BRACKET)
 				m_fCOPAngle += angleDelta;
 
 			if (eventData[1] == GLFW_KEY_UP)
 				m_fCOPDist = std::max(m_fCOPDist - distDelta, 0.f);
 			if (eventData[1] == GLFW_KEY_DOWN)
 				m_fCOPDist += distDelta;
-
-			if (eventData[1] == GLFW_KEY_LEFT_BRACKET)
-				m_pHinge->setAngle(m_pHinge->getAngle() + 1.f);
-			if (eventData[1] == GLFW_KEY_RIGHT_BRACKET)
-				m_pHinge->setAngle(m_pHinge->getAngle() - 1.f);
 
 			if (eventData[1] == GLFW_KEY_MINUS)
 				m_pDiagram->setEyeSeparation(m_pDiagram->getEyeSeparation() - 0.1f);

@@ -53,7 +53,7 @@ private:
 
 	struct StudyCondition {
 		float viewAngle;
-		float viewDist;
+		float viewDistFactor;
 		int startAngle;
 		float hingeLen;
 		glm::vec3 hingePos;
@@ -79,6 +79,7 @@ private:
 	bool m_bLockViewCOP;
 	bool m_bShowDiagram;
 	bool m_bWaitingForResponse;
+	bool m_bDisplayCondition;
 
 	float m_fCOPDist;
 	float m_fCOPAngle;
@@ -116,9 +117,10 @@ private:
 	ViewingConditionsDiagram* m_pDiagram;
 
 private:
+	void generateTrials(bool randomOrder = true);
 	void next(StudyResponse response);
 	void writeToLog(StudyResponse response);
-	void loadCondition();
+	void loadCondition(StudyCondition &c);
 	bool moveScreen(float viewAngle, bool forceMove = false);
 	void receive(void* data);
 };
