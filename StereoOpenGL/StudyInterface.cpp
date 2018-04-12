@@ -335,6 +335,8 @@ void StudyInterface::next(StudyResponse response)
 
 		m_bPaused = true;
 
+		m_strLastResponse = std::string();
+
 		if (m_vExperimentConditions.size() == 0)
 			end();
 	}
