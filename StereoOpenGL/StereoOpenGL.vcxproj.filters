@@ -66,6 +66,9 @@
     <ClCompile Include="ViewingConditionsDiagram.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Rod.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\shared\lodepng.h">
@@ -111,6 +114,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ViewingConditionsDiagram.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Rod.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

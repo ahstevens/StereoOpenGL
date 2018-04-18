@@ -10,6 +10,8 @@
 StudyInterface::StudyInterface()
 	: m_pSocket(NULL)
 	, m_pHinge(NULL)
+	, m_pVector(NULL)
+	, m_pMeasuringRod(NULL)
 	, m_fHingeSize(10.f)
 	, m_pEditParam(NULL)
 	, m_pDiagram(NULL)
@@ -39,6 +41,12 @@ StudyInterface::~StudyInterface()
 	if (m_pHinge)
 		delete m_pHinge;
 
+	if (m_pVector)
+		delete m_pVector;
+
+	if (m_pMeasuringRod)
+		delete m_pMeasuringRod;
+
 	if (m_pDiagram)
 		delete m_pDiagram;
 }
@@ -55,6 +63,12 @@ void StudyInterface::init(glm::ivec2 screenRes, glm::mat4 worldToScreenTransform
 
 	if (m_pHinge == NULL)
 		m_pHinge = new Hinge(m_fHingeSize, 90.f);
+
+	if (m_pVector == NULL)
+		m_pVector = new Rod(m_fHingeSize, 0.f);
+
+	if (m_pMeasuringRod == NULL)
+		m_pMeasuringRod = new Rod(m_fHingeSize, 0.f);
 
 	if (m_pDiagram == NULL)
 		m_pDiagram = new ViewingConditionsDiagram(m_mat4Screen, m_ivec2Screen);
@@ -80,6 +94,8 @@ void StudyInterface::reset()
 	m_fEyeSep = 6.7;
 
 	m_pHinge->setPos(glm::vec3(0.f, 0.f, -5.f));
+	m_pVector->setPos(glm::vec3(0.f, 0.f, -5.f));
+	m_pMeasuringRod->setPos(glm::vec3(0.f, 0.f, -5.f));
 
 	m_fCOPAngle = m_fViewAngle;
 	m_fCOPDist = m_fViewDist;
@@ -173,8 +189,11 @@ void StudyInterface::draw()
 	}
 	else if ((m_bShowStimulus && !m_bPaused) || m_bDisplayCondition)
 	{
-		m_pHinge->draw();
+		//m_pHinge->draw();
 	}
+
+	m_pVector->draw();
+	//m_pMeasuringRod->draw();
 
 	if (m_pEditParam)
 	{
@@ -681,18 +700,29 @@ void StudyInterface::receive(void * data)
 		if (!m_bStudyMode)
 		{
 			if (eventData[1] == GLFW_KEY_LEFT)
+			{
 				m_pHinge->setAngle(m_pHinge->getAngle() + 1.f);
+				m_pVector->setAngle(m_pVector->getAngle() + 1.f);
+			}
 			if (eventData[1] == GLFW_KEY_RIGHT)
+			{
 				m_pHinge->setAngle(m_pHinge->getAngle() - 1.f);
+				m_pVector->setAngle(m_pVector->getAngle() - 1.f);
+			}
+
+			if (eventData[1] == GLFW_KEY_UP)
+				m_pVector->setLength(m_pVector->getLength() + 0.1f);
+			if (eventData[1] == GLFW_KEY_DOWN)
+				m_pVector->setLength(std::max(m_pVector->getLength() - 0.1f, 0.1f));
 
 			if (eventData[1] == GLFW_KEY_LEFT_BRACKET)
 				m_fCOPAngle -= angleDelta;
 			if (eventData[1] == GLFW_KEY_RIGHT_BRACKET)
 				m_fCOPAngle += angleDelta;
 
-			if (eventData[1] == GLFW_KEY_UP)
+			if (eventData[1] == GLFW_KEY_KP_SUBTRACT)
 				m_fCOPDist = std::max(m_fCOPDist - distDelta, 0.f);
-			if (eventData[1] == GLFW_KEY_DOWN)
+			if (eventData[1] == GLFW_KEY_KP_ADD)
 				m_fCOPDist += distDelta;
 
 			if (eventData[1] == GLFW_KEY_MINUS)

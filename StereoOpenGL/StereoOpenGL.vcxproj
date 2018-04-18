@@ -172,6 +172,7 @@
     <ClCompile Include="Icosphere.cpp" />
     <ClCompile Include="LightingSystem.cpp" />
     <ClCompile Include="Renderer.cpp" />
+    <ClCompile Include="Rod.cpp" />
     <ClCompile Include="shaderset.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="StudyInterface.cpp" />
@@ -190,6 +191,7 @@
     <ClInclude Include="Icosphere.h" />
     <ClInclude Include="LightingSystem.h" />
     <ClInclude Include="Renderer.h" />
+    <ClInclude Include="Rod.h" />
     <ClInclude Include="shaderset.h" />
     <ClInclude Include="StudyInterface.h" />
     <ClInclude Include="ViewingConditionsDiagram.h" />
