@@ -31,13 +31,6 @@ private:
 
 	void drawHingeAngle(std::vector<glm::vec3> pts, glm::vec4 col);
 
-	std::vector<glm::vec3> transformMonoscopicPoints(glm::vec3 centerOfProj, glm::vec3 viewPos, std::vector<glm::vec3> obj);
-	std::vector<glm::vec3> transformStereoscopicPoints(glm::vec3 centerOfProjA, glm::vec3 centerOfProjB, glm::vec3 viewPosA, glm::vec3 viewPosB, std::vector<glm::vec3> obj);
-
-
-	std::vector<glm::vec3> getScreenIntersections(glm::vec3 centerOfProjection, std::vector<glm::vec3> pts);
-	bool LineLineIntersect(glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, glm::vec3 p4, glm::vec3 * pa, glm::vec3 * pb, double * mua, double * mub);
-
 private:	
 	glm::mat4 m_mat4ScreenBasis; // non-normalized
 	glm::mat4 m_mat4ScreenBasisOrtho; // orthonormal

@@ -69,6 +69,9 @@
     <ClCompile Include="Rod.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DistortionUtils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\shared\lodepng.h">
@@ -117,6 +120,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Rod.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DistortionUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

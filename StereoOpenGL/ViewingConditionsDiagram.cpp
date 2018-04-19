@@ -2,9 +2,9 @@
 #include <GL/glew.h>
 #include "DebugDrawer.h"
 #include "Renderer.h"
-#include <gtx/intersect.hpp>
-#include <gtx/vector_angle.hpp>
+#include "DistortionUtils.h"
 #include <sstream>
+#include <gtx/vector_angle.hpp>
 
 ViewingConditionsDiagram::ViewingConditionsDiagram(glm::mat4 screenBasis, glm::ivec2 screenResolution)
 	: m_mat4ScreenBasis(screenBasis)
@@ -74,14 +74,16 @@ void ViewingConditionsDiagram::draw()
 		drawOBJ(hingePts, glm::vec4(1.f));
 		drawHingeAngle(hingePts, glm::vec4(1.f));
 
-		auto xformed = transformMonoscopicPoints(copPos, viewPos, hingePts);
+		
+
+		auto xformed = distutil::transformMonoscopicPoints(copPos, viewPos, glm::vec3(m_mat4ScreenBasisOrtho[3]), -glm::vec3(m_mat4ScreenBasisOrtho[1]), hingePts);
 		drawEye(leftEyePos, glm::vec4(1.f, 0.f, 0.f, 0.5f), glm::vec4(1.f, 0.f, 0.f, 1.f), xformed);
 		drawEye(rightEyePos, glm::vec4(0.f, 1.f, 0.f, 0.5f), glm::vec4(0.f, 1.f, 0.f, 1.f), xformed);
 		drawOBJ(xformed, glm::vec4(0.8f));
 		drawHingeAngle(xformed, glm::vec4(1.f));
 
 		// Calc intersection points
-		for (auto i : getScreenIntersections(copPos, hingePts))
+		for (auto i : distutil::getScreenIntersections(copPos, glm::vec3(m_mat4ScreenBasisOrtho[3]), -glm::vec3(m_mat4ScreenBasisOrtho[1]), hingePts))
 		{
 			DebugDrawer::getInstance().setTransform(glm::translate(glm::mat4(), i));
 			DebugDrawer::getInstance().drawArc(0.1f, 0.1f, 0.f, 360.f, glm::vec4(1.f, 0.f, 1.f, 1.f), false);
@@ -94,14 +96,14 @@ void ViewingConditionsDiagram::draw()
 		drawOBJ(hingePts, glm::vec4(1.f));
 		drawHingeAngle(hingePts, glm::vec4(1.f));
 
-		auto xformed = transformStereoscopicPoints(copLeft, copRight, leftEyePos, rightEyePos, hingePts);
+		auto xformed = distutil::transformStereoscopicPoints(copLeft, copRight, leftEyePos, rightEyePos, glm::vec3(m_mat4ScreenBasisOrtho[3]), -glm::vec3(m_mat4ScreenBasisOrtho[1]), hingePts);
 		drawEye(leftEyePos, glm::vec4(1.f, 0.f, 0.f, 0.5f), glm::vec4(1.f, 0.f, 0.f, 1.f), xformed);
 		drawEye(rightEyePos, glm::vec4(0.f, 1.f, 0.f, 0.5f), glm::vec4(0.f, 1.f, 0.f, 1.f), xformed);
 		drawOBJ(xformed, glm::vec4(1.f, 1.f, 0.f, 0.8f));
 		drawHingeAngle(xformed, glm::vec4(1.f, 1.f, 0.f, 1.f));
 
-		auto iL = getScreenIntersections(copLeft, hingePts);
-		auto iR = getScreenIntersections(copRight, hingePts);
+		auto iL = distutil::getScreenIntersections(copLeft, glm::vec3(m_mat4ScreenBasisOrtho[3]), -glm::vec3(m_mat4ScreenBasisOrtho[1]), hingePts);
+		auto iR = distutil::getScreenIntersections(copRight, glm::vec3(m_mat4ScreenBasisOrtho[3]), -glm::vec3(m_mat4ScreenBasisOrtho[1]), hingePts);
 
 		// Calc intersection points
 		for (int i = 0; i < hingePts.size(); ++i)
@@ -255,105 +257,4 @@ void ViewingConditionsDiagram::drawHingeAngle(std::vector<glm::vec3> pts, glm::v
 		Renderer::CENTER,
 		Renderer::CENTER_TOP
 	);
-}
-
-std::vector<glm::vec3> ViewingConditionsDiagram::transformMonoscopicPoints(glm::vec3 centerOfProj, glm::vec3 viewPos, std::vector<glm::vec3> obj)
-{
-	auto intPts = getScreenIntersections(centerOfProj, obj);
-
-	std::vector<glm::vec3> ret;
-
-	for (int i = 0; i < obj.size(); ++i)
-	{
-		float ratio = glm::length(obj[i] - intPts[i]) / glm::length(intPts[i] - centerOfProj);
-		glm::vec3 newPosToInt = intPts[i] - viewPos;
-		float transformedOffset = ratio * glm::length(newPosToInt);
-
-		ret.push_back(intPts[i] + glm::normalize(newPosToInt) * transformedOffset);
-	}
-
-	return ret;
-}
-
-std::vector<glm::vec3> ViewingConditionsDiagram::transformStereoscopicPoints(glm::vec3 centerOfProjL, glm::vec3 centerOfProjR, glm::vec3 viewPosL, glm::vec3 viewPosR, std::vector<glm::vec3> obj)
-{
-	std::vector<glm::vec3> iL(getScreenIntersections(centerOfProjL, obj));
-	std::vector<glm::vec3> iR(getScreenIntersections(centerOfProjR, obj));
-
-	std::vector<glm::vec3> ret;
-	for (int i = 0; i < obj.size(); ++i)
-	{
-		glm::vec3 pa, pb;
-		double mua, mub;
-		LineLineIntersect(viewPosL, iL[i], viewPosR, iR[i], &pa, &pb, &mua, &mub);
-		ret.push_back((pa + pb) / 2.f);
-	}
-
-	return ret;
-}
-
-std::vector<glm::vec3> ViewingConditionsDiagram::getScreenIntersections(glm::vec3 centerOfProjection, std::vector<glm::vec3> pts)
-{
-	std::vector<glm::vec3> ret;
-
-	for (auto pt : pts)
-	{
-		float ptDist;
-		glm::intersectRayPlane(centerOfProjection, pt - centerOfProjection, glm::vec3(m_mat4ScreenBasisOrtho[3]), -glm::vec3(m_mat4ScreenBasisOrtho[1]), ptDist);
-		ret.push_back(centerOfProjection + (pt - centerOfProjection) * ptDist);
-	}
-	return ret;
-}
-
-/*
-from http://paulbourke.net/geometry/pointlineplane/lineline.c
-
-Calculate the line segment PaPb that is the shortest route between
-two lines P1P2 and P3P4. Calculate also the values of mua and mub where
-Pa = P1 + mua (P2 - P1)
-Pb = P3 + mub (P4 - P3)
-Return false if no solution exists.
-*/
-bool ViewingConditionsDiagram::LineLineIntersect(	glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, glm::vec3 p4, glm::vec3 *pa, glm::vec3 *pb, double *mua, double *mub)
-{
-	glm::vec3 p13, p43, p21;
-	double d1343, d4321, d1321, d4343, d2121;
-	double numer, denom;
-
-	p13.x = p1.x - p3.x;
-	p13.y = p1.y - p3.y;
-	p13.z = p1.z - p3.z;
-	p43.x = p4.x - p3.x;
-	p43.y = p4.y - p3.y;
-	p43.z = p4.z - p3.z;
-	if (glm::abs(p43.x) < glm::epsilon<float>() && glm::abs(p43.y) < glm::epsilon<float>() && glm::abs(p43.z) < glm::epsilon<float>())
-		return false;
-	p21.x = p2.x - p1.x;
-	p21.y = p2.y - p1.y;
-	p21.z = p2.z - p1.z;
-	if (glm::abs(p21.x) < glm::epsilon<float>() && glm::abs(p21.y) < glm::epsilon<float>() && glm::abs(p21.z) < glm::epsilon<float>())
-		return false;
-
-	d1343 = p13.x * p43.x + p13.y * p43.y + p13.z * p43.z;
-	d4321 = p43.x * p21.x + p43.y * p21.y + p43.z * p21.z;
-	d1321 = p13.x * p21.x + p13.y * p21.y + p13.z * p21.z;
-	d4343 = p43.x * p43.x + p43.y * p43.y + p43.z * p43.z;
-	d2121 = p21.x * p21.x + p21.y * p21.y + p21.z * p21.z;
-
-	denom = d2121 * d4343 - d4321 * d4321;
-	if (glm::abs(denom) < glm::epsilon<float>())
-		return false;
-	numer = d1343 * d4321 - d1321 * d4343;
-
-	*mua = numer / denom;
-	*mub = (d1343 + d4321 * (*mua)) / d4343;
-
-	pa->x = p1.x + *mua * p21.x;
-	pa->y = p1.y + *mua * p21.y;
-	pa->z = p1.z + *mua * p21.z;
-	pb->x = p3.x + *mub * p43.x;
-	pb->y = p3.y + *mub * p43.y;
-	pb->z = p3.z + *mub * p43.z;
-
-	return true;
 }

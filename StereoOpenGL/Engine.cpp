@@ -15,7 +15,7 @@ float							g_fDisplayDiag = 27.f * INTOCM; // physical display diagonal measure
 glm::vec3						g_vec3ScreenPos(0.f, 0.f, 0.f);
 glm::vec3						g_vec3ScreenNormal(0.f, 0.f, 1.f);
 glm::vec3						g_vec3ScreenUp(0.f, 1.f, 0.f);
-bool							g_bStereo = true;
+bool							g_bStereo = false;
 
 
 //-----------------------------------------------------------------------------
