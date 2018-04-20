@@ -3,7 +3,6 @@
 #include "WinsockClient.h"
 #include "GLFWInputBroadcaster.h"
 #include "Hinge.h"
-#include "Rod.h"
 #include "ViewingConditionsDiagram.h"
 
 #include <glm.hpp>
@@ -61,11 +60,20 @@ private:
 		bool matchedView;
 	};
 
+	struct Rod {
+		float length;
+		float angle;
+		glm::vec3 pos;
+		glm::vec3 color;
+		std::string textureName;
+		std::string shaderName;
+	};
+
 	std::future<bool> m_SocketFuture;
 	WinsockClient* m_pSocket;
 	Hinge* m_pHinge;
-	Rod* m_pVector;
-	Rod* m_pMeasuringRod;
+	Rod m_Vector;
+	Rod m_MeasuringRod;
 
 	glm::ivec2 m_ivec2Screen;
 	glm::mat4 m_mat4Screen;
