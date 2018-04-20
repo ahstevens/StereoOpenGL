@@ -50,14 +50,15 @@ void Rod::draw()
 {
 	Renderer::RendererSubmission rs;
 	rs.glPrimitiveType = GL_TRIANGLES;
-	rs.shaderName = "gridflat";
+	rs.shaderName = "rings";
 	rs.VAO = Renderer::getInstance().getPrimitiveVAO("cylinder");
 	rs.vertCount = Renderer::getInstance().getPrimitiveIndexCount("cylinder");
 	rs.indexType = GL_UNSIGNED_SHORT;
-	rs.diffuseTexName = "wood.png";
-	rs.diffuseColor = glm::vec4(glm::vec3(0.75f), 1.f);
+	rs.diffuseTexName = "noise1.png";
+	rs.diffuseColor = glm::vec4(glm::vec3(1.f, 0.f, 0.f), 1.f);
 	rs.hasTransparency = rs.diffuseColor.a != 1.f;
-	rs.specularColor = glm::vec4(glm::vec3(0.25f), 1.f);
+	rs.specularColor = glm::vec4(glm::vec3(0.f), 1.f);
+	rs.specularExponent = 100.f;
 
 	float xoffset = (m_fLength / 2.f) * glm::sin(glm::radians(m_fAngle / 2.f));
 	float zoffset = (m_fLength / 2.f) * glm::cos(glm::radians(m_fAngle / 2.f));

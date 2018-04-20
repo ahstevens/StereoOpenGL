@@ -160,9 +160,6 @@
     <None Include="shaders\windowtexture.frag">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="shaders\grid.vert">
-      <Filter>Shaders</Filter>
-    </None>
     <None Include="shaders\shadow.vert">
       <Filter>Shaders</Filter>
     </None>
@@ -173,6 +170,12 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="shaders\gridlighting.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\ringslighting.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\ringsflat.frag">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

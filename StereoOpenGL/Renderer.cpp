@@ -308,8 +308,10 @@ void Renderer::setupShaders()
 	m_mapShaders["lightingWireframe"] = m_Shaders.AddProgramFromExts({ "shaders/lighting.vert", "shaders/lightingWF.geom", "shaders/lightingWF.frag" });
 	m_mapShaders["flat"] = m_Shaders.AddProgramFromExts({ "shaders/flat.vert", "shaders/flat.frag" });
 	m_mapShaders["debug"] = m_Shaders.AddProgramFromExts({ "shaders/flat.vert", "shaders/flat.frag" });
-	m_mapShaders["grid"] = m_Shaders.AddProgramFromExts({ "shaders/grid.vert", "shaders/gridlighting.frag" });
-	m_mapShaders["gridflat"] = m_Shaders.AddProgramFromExts({ "shaders/grid.vert", "shaders/gridflat.frag" });
+	m_mapShaders["grid"] = m_Shaders.AddProgramFromExts({ "shaders/lighting.vert", "shaders/gridlighting.frag" });
+	m_mapShaders["gridflat"] = m_Shaders.AddProgramFromExts({ "shaders/lighting.vert", "shaders/gridflat.frag" });
+	m_mapShaders["rings"] = m_Shaders.AddProgramFromExts({ "shaders/lighting.vert", "shaders/ringslighting.frag" });
+	m_mapShaders["ringsflat"] = m_Shaders.AddProgramFromExts({ "shaders/lighting.vert", "shaders/ringsflat.frag" });
 	m_mapShaders["solid"] = m_Shaders.AddProgramFromExts({ "shaders/solid.vert", "shaders/flat.frag" });
 	m_mapShaders["text"] = m_Shaders.AddProgramFromExts({ "shaders/text.vert", "shaders/text.frag" });
 	m_mapShaders["shadow"] = m_Shaders.AddProgramFromExts({ "shaders/shadow.vert", "shaders/shadow.frag" });
@@ -317,6 +319,7 @@ void Renderer::setupShaders()
 	m_pLighting->addShaderToUpdate(m_mapShaders["lighting"]);
 	m_pLighting->addShaderToUpdate(m_mapShaders["lightingWireframe"]);
 	m_pLighting->addShaderToUpdate(m_mapShaders["grid"]);
+	m_pLighting->addShaderToUpdate(m_mapShaders["rings"]);
 	m_pLighting->addShaderToUpdate(m_mapShaders["shadow"]);
 }
 

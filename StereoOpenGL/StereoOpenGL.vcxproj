@@ -200,9 +200,10 @@
     <ClInclude Include="WinsockClient.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="shaders\grid.vert" />
     <None Include="shaders\gridflat.frag" />
     <None Include="shaders\gridlighting.frag" />
+    <None Include="shaders\ringsflat.frag" />
+    <None Include="shaders\ringslighting.frag" />
     <None Include="shaders\shadow.frag" />
     <None Include="shaders\shadow.vert" />
     <None Include="shaders\windowtexture.frag" />
