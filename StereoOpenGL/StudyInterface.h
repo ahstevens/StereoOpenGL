@@ -65,9 +65,13 @@ private:
 		float angle;
 		glm::vec3 pos;
 		glm::vec3 color;
+		glm::vec3 rotAxis;
 		std::string textureName;
 		std::string shaderName;
 	};
+
+	std::vector<glm::vec3> m_vec3GridPoints;
+	std::vector<glm::vec3> m_vec3DistortedGridPoints;
 
 	std::future<bool> m_SocketFuture;
 	WinsockClient* m_pSocket;

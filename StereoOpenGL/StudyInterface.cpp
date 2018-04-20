@@ -2,6 +2,7 @@
 
 #include "Renderer.h"
 #include "DataLogger.h"
+#include "DistortionUtils.h"
 
 #include <GLFW/glfw3.h>
 #include <algorithm>
@@ -85,6 +86,7 @@ void StudyInterface::reset()
 
 	m_Vector.length = m_fHingeSize;
 	m_Vector.angle = 0.f;
+	m_Vector.rotAxis = glm::vec3(0.f, 1.f, 0.f);
 	m_Vector.pos = glm::vec3(0.f);
 	m_Vector.color = glm::vec3(1.f, 0.f, 0.f);
 	m_Vector.shaderName = "rings";
@@ -92,8 +94,9 @@ void StudyInterface::reset()
 
 	m_MeasuringRod.length = m_fHingeSize;
 	m_MeasuringRod.angle = -90.f;
+	m_MeasuringRod.rotAxis = glm::vec3(0.f, 0.f, 1.f);
 	m_MeasuringRod.pos = glm::vec3(0.f, -5.f, 0.f);
-	m_Vector.color = glm::vec3(1.f);
+	m_MeasuringRod.color = glm::vec3(1.f);
 	m_MeasuringRod.shaderName = "lighting";
 	m_MeasuringRod.textureName = "white";
 
@@ -126,6 +129,11 @@ void StudyInterface::reset()
 	m_vParams.push_back({ "View Angle (deg)" , "0", STUDYPARAM_NUMERIC | STUDYPARAM_POSNEG });
 	m_vParams.push_back({ "Display Move Time (sec)" , "5.0", STUDYPARAM_NUMERIC | STUDYPARAM_DECIMAL });
 	m_vParams.push_back({ "Name" , m_strName, STUDYPARAM_ALPHA | STUDYPARAM_NUMERIC | STUDYPARAM_DECIMAL });
+
+	for (int i = 0; i < 10; ++i)
+	{
+		;
+	}
 }
 
 void StudyInterface::update()
@@ -205,7 +213,7 @@ void StudyInterface::draw()
 		rs.hasTransparency = rs.diffuseColor.a != 1.f;
 		rs.specularColor = glm::vec4(glm::vec3(0.f), 1.f);
 		rs.specularExponent = 100.f;
-		rs.modelToWorldTransform = glm::translate(glm::mat4(), rod.pos) * glm::rotate(glm::mat4(), glm::radians(rod.angle), glm::vec3(0.f, 0.f, 1.f)) * glm::rotate(glm::mat4(), glm::radians(90.f), glm::vec3(0.f, 1.f, 0.f)) * glm::scale(glm::mat4(), glm::vec3(1.f, 1.f, rod.length));
+		rs.modelToWorldTransform = glm::translate(glm::mat4(), rod.pos) * glm::rotate(glm::mat4(), glm::radians(rod.angle), rod.rotAxis) * glm::rotate(glm::mat4(), glm::radians(90.f), glm::vec3(0.f, 1.f, 0.f)) * glm::scale(glm::mat4(), glm::vec3(1.f, 1.f, rod.length));
 
 		Renderer::getInstance().addToDynamicRenderQueue(rs);
 	}
@@ -315,6 +323,8 @@ void StudyInterface::draw()
 		ss << "Viewing Angle: " << (m_bLockViewCOP ? m_fViewAngle : m_fCOPAngle) << std::endl;
 		ss << "Viewing Distance: " << (m_bLockViewCOP ? m_fViewDist : m_fCOPDist) << std::endl;
 		ss << "Hinge Angle: " << m_pHinge->getAngle() << std::endl;
+		ss << "Target Rod Length: " << m_Vector.length << std::endl;
+		ss << "Measuring Rod Length: " << m_MeasuringRod.length << std::endl;
 		ss << (m_bLockViewCOP ? "Fishtank Mode" : "Untracked Stereo Mode");		
 
 		Renderer::getInstance().drawUIText(
@@ -726,9 +736,9 @@ void StudyInterface::receive(void * data)
 			}
 
 			if (eventData[1] == GLFW_KEY_UP)
-				m_Vector.length += 0.1f;
+				m_MeasuringRod.length += 0.1f;
 			if (eventData[1] == GLFW_KEY_DOWN)
-				m_Vector.length = std::max(m_Vector.length - 0.1f, 0.1f);
+				m_MeasuringRod.length = std::max(m_MeasuringRod.length - 0.1f, 0.1f);
 
 			if (eventData[1] == GLFW_KEY_LEFT_BRACKET)
 				m_fCOPAngle -= angleDelta;
