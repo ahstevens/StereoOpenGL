@@ -125,16 +125,16 @@ bool Engine::init()
 
 	if (!(m_pMainWindow = createWindow(glfwGetPrimaryMonitor(), 0, 0, g_bStereo)))
 	{
-		dprintf("%s - Window could not be created!\n", __FUNCTION__);
-		return false;
+		dprintf("%s - Window could not be created! Stereo = %d\n", __FUNCTION__, g_bStereo);
+		//return false;
 	}
 	
 	glfwGetWindowSize(m_pMainWindow, &m_ivec2MainWindowSize.x, &m_ivec2MainWindowSize.y);
 	
 	if (!initGL(g_bStereo))
 	{
-		dprintf("%s - Unable to initialize OpenGL!\n", __FUNCTION__);
-		return false;
+		dprintf("%s - Unable to initialize OpenGL! Stereo = %d\n", __FUNCTION__, g_bStereo);
+		//return false;
 	}
 
 	GLFWInputBroadcaster::getInstance().init(m_pMainWindow);
@@ -490,7 +490,7 @@ GLFWwindow * Engine::createWindow(GLFWmonitor* monitor, int width, int height, b
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_SAMPLES, 16);
 #if _DEBUG
-	//glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
+	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
 #endif
 	if (stereoContext)
 	{
@@ -510,10 +510,16 @@ GLFWwindow * Engine::createWindow(GLFWmonitor* monitor, int width, int height, b
 
 	if (!ret)
 	{
-		dprintf("%s - Error: The OpenGL window could not be created!\n", __FUNCTION__);
+		dprintf("%s - Error: The Stereo OpenGL window could not be created!\n", __FUNCTION__);
 		if (stereoContext)
+		{
 			dprintf("%s - Tip: Ensure that stereo is enabled for the executable through the nVidia Control Panel 3D Program Settings.\n", __FUNCTION__);
-		return NULL;
+			glfwWindowHint(GLFW_STEREO, GL_FALSE);
+			glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
+			ret = glfwCreateWindow(w, h, "CCOM VisLab", fullscreen ? monitor : NULL, NULL);
+		}
+		else
+			return NULL;
 	}
 
 	if(stereoContext && !glfwGetWindowAttrib(ret, GLFW_STEREO))

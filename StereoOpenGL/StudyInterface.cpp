@@ -50,6 +50,7 @@ void StudyInterface::init(glm::ivec2 screenRes, glm::mat4 worldToScreenTransform
 
 	m_ivec2Screen = screenRes;
 	m_mat4Screen = worldToScreenTransform;
+	m_mat4Screen[2] *= 10.f;
 
 	if (m_pSocket == NULL)
 		m_pSocket = new WinsockClient();
@@ -130,10 +131,12 @@ void StudyInterface::reset()
 	m_vParams.push_back({ "Display Move Time (sec)" , "5.0", STUDYPARAM_NUMERIC | STUDYPARAM_DECIMAL });
 	m_vParams.push_back({ "Name" , m_strName, STUDYPARAM_ALPHA | STUDYPARAM_NUMERIC | STUDYPARAM_DECIMAL });
 
-	for (int i = 0; i < 10; ++i)
-	{
-		;
-	}
+	m_vec3GridPoints.clear();
+	int gridRes = 10;
+	for (int i = 0; i < gridRes + 1; ++i)
+		for (int j = 0; j < gridRes + 1; ++j)
+			for (int k = 0; k < gridRes + 1; ++k)
+				m_vec3GridPoints.push_back(glm::vec3(m_mat4Screen * glm::vec4(i/(gridRes/2.f) - 1.f, j/(gridRes/2.f) - 1.f, k/(gridRes/2.f) - 1.f, 1.f)));
 }
 
 void StudyInterface::update()
@@ -198,6 +201,28 @@ void StudyInterface::draw()
 	else if ((m_bShowStimulus && !m_bPaused) || m_bDisplayCondition)
 	{
 		//m_pHinge->draw();
+	}
+	
+	//for (auto pt : m_vec3GridPoints)
+	//	Renderer::getInstance().drawPrimitive("icosphere", glm::translate(glm::mat4(), pt), glm::vec4(1.f), glm::vec4(1.f), 32.f);
+	//
+	//for (auto pt : m_vec3DistortedGridPoints)
+	//	Renderer::getInstance().drawPrimitive("icosphere", glm::translate(glm::mat4(), pt), glm::vec4(1.f, 0.f, 0.f, 1.f), glm::vec4(1.f), 32.f);
+
+	for (int i = 0; i < m_vec3DistortedGridPoints.size(); ++i)
+	{
+		glm::vec3 dir(m_vec3DistortedGridPoints[i] - m_vec3GridPoints[i]);
+
+		auto u = glm::normalize(glm::cross(glm::vec3(0.f, 1.f, 0.f), glm::normalize(dir)));
+		auto v = glm::normalize(glm::cross(glm::normalize(dir), u));
+
+		glm::mat4 xform;
+		xform[0] = glm::vec4(u * 0.1f, 0.f);
+		xform[1] = glm::vec4(v * 0.1f, 0.f);
+		xform[2] = glm::vec4(glm::normalize(dir) * 0.1f, 0.f);
+		xform[3] = glm::vec4(m_vec3GridPoints[i], 1.f);
+
+		Renderer::getInstance().drawPrimitive("icosphere", xform, glm::vec4(1.f), glm::vec4(1.f), 32.f);
 	}
 
 	for (auto rod : { m_Vector, m_MeasuringRod })
@@ -710,9 +735,32 @@ void StudyInterface::receive(void * data)
 				m_bShowDiagram = !m_bShowDiagram;
 			}
 
-			if (eventData[1] == GLFW_KEY_KP_ENTER)
+			if (eventData[1] == GLFW_KEY_I)
 			{
 				m_bDisplayCondition = !m_bDisplayCondition;
+			}
+
+			if (eventData[1] == GLFW_KEY_X)
+			{
+				glm::mat4 m_mat4ScreenBasisOrtho = glm::mat4(
+					glm::normalize(m_mat4Screen[0]),
+					glm::normalize(m_mat4Screen[1]),
+					glm::normalize(m_mat4Screen[2]),
+					m_mat4Screen[3]
+				);
+
+				float projAngleOffset = glm::degrees(glm::asin(m_fEyeSep / (2.f * m_fCOPDist)));
+
+				glm::vec3 copLeft = (glm::rotate(glm::mat4(), glm::radians(m_fCOPAngle - projAngleOffset), glm::vec3(m_mat4ScreenBasisOrtho[2])) * glm::translate(m_mat4ScreenBasisOrtho, glm::vec3(0.f, -m_fCOPDist, 0.f)))[3];
+				glm::vec3 copRight = (glm::rotate(glm::mat4(), glm::radians(m_fCOPAngle + projAngleOffset), glm::vec3(m_mat4ScreenBasisOrtho[2])) * glm::translate(m_mat4ScreenBasisOrtho, glm::vec3(0.f, -m_fCOPDist, 0.f)))[3];
+				
+				float viewAngleOffset = glm::degrees(glm::asin(m_fEyeSep / (2.f * m_fViewDist)));
+
+				glm::vec3 leftEyePos = (glm::rotate(glm::mat4(), glm::radians(m_fViewAngle - viewAngleOffset), glm::vec3(m_mat4ScreenBasisOrtho[2])) * glm::translate(m_mat4ScreenBasisOrtho, glm::vec3(0.f, -m_fViewDist, 0.f)))[3];
+				glm::vec3 rightEyePos = (glm::rotate(glm::mat4(), glm::radians(m_fViewAngle + viewAngleOffset), glm::vec3(m_mat4ScreenBasisOrtho[2])) * glm::translate(m_mat4ScreenBasisOrtho, glm::vec3(0.f, -m_fViewDist, 0.f)))[3];
+
+				m_vec3DistortedGridPoints.clear();
+				m_vec3DistortedGridPoints = distutil::transformStereoscopicPoints(copLeft, copRight, leftEyePos, rightEyePos, glm::vec3(m_mat4ScreenBasisOrtho[3]), -glm::vec3(m_mat4ScreenBasisOrtho[1]), m_vec3GridPoints);
 			}
 		}
 	}
