@@ -10,7 +10,7 @@ namespace distutil
 		glm::vec3 viewPos,
 		glm::vec3 screenCtr,
 		glm::vec3 screenNorm,
-		std::vector<glm::vec3> obj
+		std::vector<glm::vec3> pts
 	);
 
 	std::vector<glm::vec3> transformStereoscopicPoints(
@@ -20,14 +20,14 @@ namespace distutil
 		glm::vec3 viewPosB,
 		glm::vec3 screenCtr,
 		glm::vec3 screenNorm,
-		std::vector<glm::vec3> obj
+		const std::vector<glm::vec3> pts
 	);
 	
 	std::vector<glm::vec3> getScreenIntersections(
 		glm::vec3 centerOfProjection,
 		glm::vec3 screenCtr,
 		glm::vec3 screenNorm,
-		std::vector<glm::vec3> pts
+		const std::vector<glm::vec3> pts
 	);
 	
 	bool LineLineIntersect(

@@ -56,7 +56,7 @@ void main()
 {
 	// GRID CODE
 	int ringCount = 10;
-	float ringWidth = 0.1f;
+	float ringWidth = 0.2f;
 	float falloff = 0.01f;
 
 	float remainderY = fract(v2TexCoords.y * ringCount);

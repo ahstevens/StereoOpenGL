@@ -5,15 +5,15 @@
 
 namespace distutil
 {
-	std::vector<glm::vec3> transformMonoscopicPoints(glm::vec3 centerOfProj, glm::vec3 viewPos, glm::vec3 screenCtr, glm::vec3 screenNorm, std::vector<glm::vec3> obj)
+	std::vector<glm::vec3> transformMonoscopicPoints(glm::vec3 centerOfProj, glm::vec3 viewPos, glm::vec3 screenCtr, glm::vec3 screenNorm, std::vector<glm::vec3> pts)
 	{
-		auto intPts = getScreenIntersections(centerOfProj, screenCtr, screenNorm, obj);
+		auto intPts = getScreenIntersections(centerOfProj, screenCtr, screenNorm, pts);
 
 		std::vector<glm::vec3> ret;
 
-		for (int i = 0; i < obj.size(); ++i)
+		for (int i = 0; i < pts.size(); ++i)
 		{
-			float ratio = glm::length(obj[i] - intPts[i]) / glm::length(intPts[i] - centerOfProj);
+			float ratio = glm::length(pts[i] - intPts[i]) / glm::length(intPts[i] - centerOfProj);
 			glm::vec3 newPosToInt = intPts[i] - viewPos;
 			float transformedOffset = ratio * glm::length(newPosToInt);
 
@@ -23,13 +23,13 @@ namespace distutil
 		return ret;
 	}
 
-	std::vector<glm::vec3> transformStereoscopicPoints(glm::vec3 centerOfProjL, glm::vec3 centerOfProjR, glm::vec3 viewPosL, glm::vec3 viewPosR, glm::vec3 screenCtr, glm::vec3 screenNorm, std::vector<glm::vec3> obj)
+	std::vector<glm::vec3> transformStereoscopicPoints(glm::vec3 centerOfProjL, glm::vec3 centerOfProjR, glm::vec3 viewPosL, glm::vec3 viewPosR, glm::vec3 screenCtr, glm::vec3 screenNorm, const std::vector<glm::vec3> pts)
 	{
-		std::vector<glm::vec3> iL(getScreenIntersections(centerOfProjL, screenCtr, screenNorm, obj));
-		std::vector<glm::vec3> iR(getScreenIntersections(centerOfProjR, screenCtr, screenNorm, obj));
+		std::vector<glm::vec3> iL(getScreenIntersections(centerOfProjL, screenCtr, screenNorm, pts));
+		std::vector<glm::vec3> iR(getScreenIntersections(centerOfProjR, screenCtr, screenNorm, pts));
 
 		std::vector<glm::vec3> ret;
-		for (int i = 0; i < obj.size(); ++i)
+		for (int i = 0; i < pts.size(); ++i)
 		{
 			glm::vec3 pa, pb;
 			double mua, mub;
@@ -40,7 +40,7 @@ namespace distutil
 		return ret;
 	}
 
-	std::vector<glm::vec3> getScreenIntersections(glm::vec3 centerOfProjection, glm::vec3 screenCenter, glm::vec3 screenNormal, std::vector<glm::vec3> pts)
+	std::vector<glm::vec3> getScreenIntersections(glm::vec3 centerOfProjection, glm::vec3 screenCenter, glm::vec3 screenNormal, const std::vector<glm::vec3> pts)
 	{
 		std::vector<glm::vec3> ret;
 
@@ -53,15 +53,15 @@ namespace distutil
 		return ret;
 	}
 
-	/*
-	from http://paulbourke.net/geometry/pointlineplane/lineline.c
-
-	Calculate the line segment PaPb that is the shortest route between
-	two lines P1P2 and P3P4. Calculate also the values of mua and mub where
-	Pa = P1 + mua (P2 - P1)
-	Pb = P3 + mub (P4 - P3)
-	Return false if no solution exists.
-	*/
+	/////////////////////////////////////////////////////////////////////////////
+	// from http://paulbourke.net/geometry/pointlineplane/lineline.c		   //
+	// 																		   //
+	// Calculate the line segment PaPb that is the shortest route between	   //
+	// two lines P1P2 and P3P4. Calculate also the values of mua and mub where //
+	// Pa = P1 + mua (P2 - P1)												   //
+	// Pb = P3 + mub (P4 - P3)												   //
+	// Return false if no solution exists.									   //
+	/////////////////////////////////////////////////////////////////////////////
 	bool LineLineIntersect(glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, glm::vec3 p4, glm::vec3 *pa, glm::vec3 *pb, double *mua, double *mub)
 	{
 		glm::vec3 p13, p43, p21;

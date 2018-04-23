@@ -516,6 +516,7 @@ GLFWwindow * Engine::createWindow(GLFWmonitor* monitor, int width, int height, b
 			dprintf("%s - Tip: Ensure that stereo is enabled for the executable through the nVidia Control Panel 3D Program Settings.\n", __FUNCTION__);
 			glfwWindowHint(GLFW_STEREO, GL_FALSE);
 			glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
+			g_bStereo = false;
 			ret = glfwCreateWindow(w, h, "CCOM VisLab", fullscreen ? monitor : NULL, NULL);
 		}
 		else

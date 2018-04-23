@@ -72,6 +72,7 @@ private:
 
 	std::vector<glm::vec3> m_vec3GridPoints;
 	std::vector<glm::vec3> m_vec3DistortedGridPoints;
+	float m_fMaxDistortionMag;
 
 	std::future<bool> m_SocketFuture;
 	WinsockClient* m_pSocket;
