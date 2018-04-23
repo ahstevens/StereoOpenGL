@@ -63,11 +63,13 @@ private:
 	struct Rod {
 		float length;
 		float angle;
+		float diameter;
 		glm::vec3 pos;
 		glm::vec3 color;
 		glm::vec3 rotAxis;
 		std::string textureName;
 		std::string shaderName;
+		bool originCenter;
 	};
 
 	std::vector<glm::vec3> m_vec3GridPoints;

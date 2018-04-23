@@ -87,18 +87,22 @@ void StudyInterface::reset()
 
 	m_Vector.length = m_fHingeSize;
 	m_Vector.angle = 0.f;
+	m_Vector.diameter = 0.5f;
 	m_Vector.rotAxis = glm::vec3(0.f, 1.f, 0.f);
-	m_Vector.pos = glm::vec3(0.f);
+	m_Vector.originCenter = true;
+	m_Vector.pos = glm::vec3(0.f, glm::length(m_mat4Screen[1]) / 2.f, 0.f);
 	m_Vector.color = glm::vec3(1.f, 0.f, 0.f);
 	m_Vector.shaderName = "rings";
 	m_Vector.textureName = "noise1.png";
 
 	m_MeasuringRod.length = m_fHingeSize;
 	m_MeasuringRod.angle = -90.f;
+	m_MeasuringRod.diameter = 0.25f;
 	m_MeasuringRod.rotAxis = glm::vec3(0.f, 0.f, 1.f);
-	m_MeasuringRod.pos = glm::vec3(0.f, -5.f, 0.f);
+	m_MeasuringRod.originCenter = false;
+	m_MeasuringRod.pos = glm::vec3(0.f, glm::length(m_mat4Screen[1]) / 3.f, 0.f);
 	m_MeasuringRod.color = glm::vec3(1.f);
-	m_MeasuringRod.shaderName = "lighting";
+	m_MeasuringRod.shaderName = "rings";
 	m_MeasuringRod.textureName = "white";
 
 	m_fCOPAngle = m_fViewAngle;
@@ -237,7 +241,9 @@ void StudyInterface::draw()
 		rs.hasTransparency = rs.diffuseColor.a != 1.f;
 		rs.specularColor = glm::vec4(glm::vec3(0.f), 1.f);
 		rs.specularExponent = 100.f;
-		rs.modelToWorldTransform = glm::translate(glm::mat4(), rod.pos) * glm::rotate(glm::mat4(), glm::radians(rod.angle), rod.rotAxis) * glm::rotate(glm::mat4(), glm::radians(90.f), glm::vec3(0.f, 1.f, 0.f)) * glm::scale(glm::mat4(), glm::vec3(1.f, 1.f, rod.length));
+		rs.modelToWorldTransform = glm::translate(glm::mat4(), rod.pos) * glm::rotate(glm::mat4(), glm::radians(rod.angle), rod.rotAxis) * glm::rotate(glm::mat4(), glm::radians(90.f), glm::vec3(0.f, 1.f, 0.f)) * glm::scale(glm::mat4(), glm::vec3(rod.diameter, rod.diameter, rod.length));
+		if (rod.originCenter)
+			rs.modelToWorldTransform *= glm::translate(glm::mat4(), glm::vec3(0.f, 0.f, -0.5f));
 
 		Renderer::getInstance().addToDynamicRenderQueue(rs);
 	}
@@ -347,6 +353,7 @@ void StudyInterface::draw()
 		ss << "Viewing Angle: " << (m_bLockViewCOP ? m_fViewAngle : m_fCOPAngle) << std::endl;
 		ss << "Viewing Distance: " << (m_bLockViewCOP ? m_fViewDist : m_fCOPDist) << std::endl;
 		ss << "Hinge Angle: " << m_pHinge->getAngle() << std::endl;
+		ss << "Target Rod Angle: " << m_Vector.angle << std::endl;
 		ss << "Target Rod Length: " << m_Vector.length << std::endl;
 		ss << "Measuring Rod Length: " << m_MeasuringRod.length << std::endl;
 		ss << (m_bLockViewCOP ? "Fishtank Mode" : "Untracked Stereo Mode");		
@@ -783,12 +790,27 @@ void StudyInterface::receive(void * data)
 			if (eventData[1] == GLFW_KEY_LEFT)
 			{
 				m_pHinge->setAngle(m_pHinge->getAngle() + 1.f);
-				m_Vector.angle += 1.f;
 			}
 			if (eventData[1] == GLFW_KEY_RIGHT)
 			{
 				m_pHinge->setAngle(m_pHinge->getAngle() - 1.f);
+			}
+
+			if (eventData[1] == GLFW_KEY_KP_4)
+			{
+				m_Vector.angle += 1.f;
+			}
+			if (eventData[1] == GLFW_KEY_KP_6)
+			{
 				m_Vector.angle -= 1.f;
+			}
+			if (eventData[1] == GLFW_KEY_KP_8)
+			{
+				m_Vector.length += 0.1f;
+			}
+			if (eventData[1] == GLFW_KEY_KP_2)
+			{
+				m_Vector.length = std::max(m_Vector.length - 0.1f, 0.1f);
 			}
 
 			if (eventData[1] == GLFW_KEY_UP)
