@@ -314,7 +314,7 @@ void MagnitudeStudy::draw()
 	{
 	}
 
-	if (m_bDisplayCondition)
+	if (m_bDisplayCondition && !m_bStudyMode)
 	{
 		std::stringstream ss;
 		ss.precision(3);
@@ -663,37 +663,37 @@ void MagnitudeStudy::receive(void * data)
 				m_bDisplayCondition = !m_bDisplayCondition;
 			}
 
-			if (eventData[1] == GLFW_KEY_X)
-			{
-				glm::mat4 m_mat4ScreenBasisOrtho = glm::mat4(
-					glm::normalize(m_mat4Screen[0]),
-					glm::normalize(m_mat4Screen[1]),
-					glm::normalize(m_mat4Screen[2]),
-					m_mat4Screen[3]
-				);
-
-				float projAngleOffset = glm::degrees(glm::asin(m_fEyeSep / (2.f * m_fCOPDist)));
-
-				glm::vec3 copLeft = (glm::rotate(glm::mat4(), glm::radians(m_fCOPAngle - projAngleOffset), glm::vec3(m_mat4ScreenBasisOrtho[1])) * glm::translate(m_mat4ScreenBasisOrtho, glm::vec3(0.f, 0.f, m_fCOPDist)))[3];
-				glm::vec3 copRight = (glm::rotate(glm::mat4(), glm::radians(m_fCOPAngle + projAngleOffset), glm::vec3(m_mat4ScreenBasisOrtho[1])) * glm::translate(m_mat4ScreenBasisOrtho, glm::vec3(0.f, 0.f, m_fCOPDist)))[3];
-				
-				float viewAngleOffset = glm::degrees(glm::asin(m_fEyeSep / (2.f * m_fViewDist)));
-
-				glm::vec3 leftEyePos = (glm::rotate(glm::mat4(), glm::radians(m_fViewAngle - viewAngleOffset), glm::vec3(m_mat4ScreenBasisOrtho[1])) * glm::translate(m_mat4ScreenBasisOrtho, glm::vec3(0.f, 0.f, m_fViewDist)))[3];
-				glm::vec3 rightEyePos = (glm::rotate(glm::mat4(), glm::radians(m_fViewAngle + viewAngleOffset), glm::vec3(m_mat4ScreenBasisOrtho[1])) * glm::translate(m_mat4ScreenBasisOrtho, glm::vec3(0.f, 0.f, m_fViewDist)))[3];
-
-				//m_vec3DistortedGridPoints.clear();
-				m_vec3DistortedGridPoints = distutil::transformStereoscopicPoints(copLeft, copRight, leftEyePos, rightEyePos, glm::vec3(m_mat4ScreenBasisOrtho[3]), glm::normalize(glm::vec3(m_mat4ScreenBasisOrtho[2])), m_vec3GridPoints);
-
-				m_fMaxDistortionMag = 0.f;
-				for (int i = 0; i < m_vec3DistortedGridPoints.size(); ++i)
-				{
-					float len = glm::length(m_vec3DistortedGridPoints[i] - m_vec3GridPoints[i]);
-					if (len > m_fMaxDistortionMag)
-						m_fMaxDistortionMag = len;
-				}
-
-			}
+			//if (eventData[1] == GLFW_KEY_X)
+			//{
+			//	glm::mat4 m_mat4ScreenBasisOrtho = glm::mat4(
+			//		glm::normalize(m_mat4Screen[0]),
+			//		glm::normalize(m_mat4Screen[1]),
+			//		glm::normalize(m_mat4Screen[2]),
+			//		m_mat4Screen[3]
+			//	);
+			//
+			//	float projAngleOffset = glm::degrees(glm::asin(m_fEyeSep / (2.f * m_fCOPDist)));
+			//
+			//	glm::vec3 copLeft = (glm::rotate(glm::mat4(), glm::radians(m_fCOPAngle - projAngleOffset), glm::vec3(m_mat4ScreenBasisOrtho[1])) * glm::translate(m_mat4ScreenBasisOrtho, glm::vec3(0.f, 0.f, m_fCOPDist)))[3];
+			//	glm::vec3 copRight = (glm::rotate(glm::mat4(), glm::radians(m_fCOPAngle + projAngleOffset), glm::vec3(m_mat4ScreenBasisOrtho[1])) * glm::translate(m_mat4ScreenBasisOrtho, glm::vec3(0.f, 0.f, m_fCOPDist)))[3];
+			//	
+			//	float viewAngleOffset = glm::degrees(glm::asin(m_fEyeSep / (2.f * m_fViewDist)));
+			//
+			//	glm::vec3 leftEyePos = (glm::rotate(glm::mat4(), glm::radians(m_fViewAngle - viewAngleOffset), glm::vec3(m_mat4ScreenBasisOrtho[1])) * glm::translate(m_mat4ScreenBasisOrtho, glm::vec3(0.f, 0.f, m_fViewDist)))[3];
+			//	glm::vec3 rightEyePos = (glm::rotate(glm::mat4(), glm::radians(m_fViewAngle + viewAngleOffset), glm::vec3(m_mat4ScreenBasisOrtho[1])) * glm::translate(m_mat4ScreenBasisOrtho, glm::vec3(0.f, 0.f, m_fViewDist)))[3];
+			//
+			//	//m_vec3DistortedGridPoints.clear();
+			//	m_vec3DistortedGridPoints = distutil::transformStereoscopicPoints(copLeft, copRight, leftEyePos, rightEyePos, glm::vec3(m_mat4ScreenBasisOrtho[3]), glm::normalize(glm::vec3(m_mat4ScreenBasisOrtho[2])), m_vec3GridPoints);
+			//
+			//	m_fMaxDistortionMag = 0.f;
+			//	for (int i = 0; i < m_vec3DistortedGridPoints.size(); ++i)
+			//	{
+			//		float len = glm::length(m_vec3DistortedGridPoints[i] - m_vec3GridPoints[i]);
+			//		if (len > m_fMaxDistortionMag)
+			//			m_fMaxDistortionMag = len;
+			//	}
+			//
+			//}
 		}
 	}
 
