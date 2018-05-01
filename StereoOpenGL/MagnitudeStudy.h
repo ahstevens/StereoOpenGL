@@ -54,7 +54,7 @@ private:
 	struct StudyCondition {
 		float viewAngle;
 		float viewDistFactor;
-		int angle;
+		float angle;
 		float len;
 		bool fishtank;
 	};

@@ -54,6 +54,8 @@ void MagnitudeStudy::init(glm::ivec2 screenRes, glm::mat4 worldToScreenTransform
 	if (m_pDiagram == NULL)
 		m_pDiagram = new ViewingConditionsDiagram(m_mat4Screen, m_ivec2Screen);
 
+	Renderer::getInstance().addTexture(new GLTexture("noise1.png", false));
+
 	reset();
 }
 
@@ -102,7 +104,7 @@ void MagnitudeStudy::reset()
 
 	m_vExperimentConditions.clear();
 
-	m_fStimulusTime = 1.5f;
+	m_fStimulusTime = 10.f;
 	m_fStimulusDelay = 1.f;
 	m_tStimulusStart = std::chrono::high_resolution_clock::time_point();
 
@@ -154,18 +156,22 @@ void MagnitudeStudy::update()
 
 	if (m_bStudyMode)
 	{
-		if (elapsedStim > m_fStimulusTime)
-		{
-			m_bBlockInput = false;
-
-			if (m_tStimulusStart != std::chrono::high_resolution_clock::time_point())
-				m_bWaitingForResponse = true;
-		}
-
 		if (elapsedStim >= 0.f && elapsedStim <= m_fStimulusTime)
 			m_bShowStimulus = true;
 		else
 			m_bShowStimulus = false;
+
+
+		if (elapsedStim > m_fStimulusTime && !m_bPaused)
+		{
+			m_bBlockInput = true;
+
+			if (m_tStimulusStart != std::chrono::high_resolution_clock::time_point())
+			{
+				writeToLog();
+				next();
+			}
+		}
 	}
 	else
 		m_bShowStimulus = true;
@@ -192,7 +198,25 @@ void MagnitudeStudy::draw()
 	}
 	else if ((m_bShowStimulus && !m_bPaused) || m_bDisplayCondition)
 	{
-		//m_pHinge->draw();
+		for (auto rod : { m_Vector, m_MeasuringRod })
+		{
+			Renderer::RendererSubmission rs;
+			rs.glPrimitiveType = GL_TRIANGLES;
+			rs.shaderName = rod.shaderName;
+			rs.VAO = Renderer::getInstance().getPrimitiveVAO("cylinder");
+			rs.vertCount = Renderer::getInstance().getPrimitiveIndexCount("cylinder");
+			rs.indexType = GL_UNSIGNED_SHORT;
+			rs.diffuseTexName = rod.textureName;
+			rs.diffuseColor = glm::vec4(rod.color, 1.f);
+			rs.hasTransparency = rs.diffuseColor.a != 1.f;
+			rs.specularColor = glm::vec4(glm::vec3(0.f), 1.f);
+			rs.specularExponent = 100.f;
+			rs.modelToWorldTransform = glm::translate(glm::mat4(), rod.pos) * glm::rotate(glm::mat4(), glm::radians(rod.angle), rod.rotAxis) * glm::rotate(glm::mat4(), glm::radians(90.f), glm::vec3(0.f, 1.f, 0.f)) * glm::scale(glm::mat4(), glm::vec3(rod.diameter, rod.diameter, rod.length));
+			if (rod.originCenter)
+				rs.modelToWorldTransform *= glm::translate(glm::mat4(), glm::vec3(0.f, 0.f, -0.5f));
+
+			Renderer::getInstance().addToDynamicRenderQueue(rs);
+		}
 	}
 	
 	for (int i = 0; i < m_vec3DistortedGridPoints.size(); ++i)
@@ -212,26 +236,6 @@ void MagnitudeStudy::draw()
 		Renderer::getInstance().drawPrimitive("icosphere", glm::translate(glm::mat4(), m_vec3GridPoints[i]) * glm::scale(glm::mat4(), glm::vec3(0.1f)), glm::vec4(0.f, 0.f, 1.f, 0.25f), glm::vec4(1.f), 32.f);
 		Renderer::getInstance().drawPrimitive("icosphere", glm::translate(glm::mat4(), m_vec3DistortedGridPoints[i]) * glm::scale(glm::mat4(), glm::vec3(0.2f)), color, glm::vec4(1.f), 32.f);
 		Renderer::getInstance().drawPrimitive("cylinder", xform, color, glm::vec4(1.f), 32.f);
-	}
-
-	for (auto rod : { m_Vector, m_MeasuringRod })
-	{
-		Renderer::RendererSubmission rs;
-		rs.glPrimitiveType = GL_TRIANGLES;
-		rs.shaderName = rod.shaderName;
-		rs.VAO = Renderer::getInstance().getPrimitiveVAO("cylinder");
-		rs.vertCount = Renderer::getInstance().getPrimitiveIndexCount("cylinder");
-		rs.indexType = GL_UNSIGNED_SHORT;
-		rs.diffuseTexName = rod.textureName;
-		rs.diffuseColor = glm::vec4(rod.color, 1.f);
-		rs.hasTransparency = rs.diffuseColor.a != 1.f;
-		rs.specularColor = glm::vec4(glm::vec3(0.f), 1.f);
-		rs.specularExponent = 100.f;
-		rs.modelToWorldTransform = glm::translate(glm::mat4(), rod.pos) * glm::rotate(glm::mat4(), glm::radians(rod.angle), rod.rotAxis) * glm::rotate(glm::mat4(), glm::radians(90.f), glm::vec3(0.f, 1.f, 0.f)) * glm::scale(glm::mat4(), glm::vec3(rod.diameter, rod.diameter, rod.length));
-		if (rod.originCenter)
-			rs.modelToWorldTransform *= glm::translate(glm::mat4(), glm::vec3(0.f, 0.f, -0.5f));
-
-		Renderer::getInstance().addToDynamicRenderQueue(rs);
 	}
 
 	if (m_pEditParam)
@@ -255,6 +259,7 @@ void MagnitudeStudy::draw()
 		if (m_bStudyMode)
 		{
 			size_t trialsLeft = m_vExperimentConditions.size();
+			ss.precision(2);
 
 			if (trialsLeft == 1)
 				ss << "Last Trial";
@@ -307,27 +312,6 @@ void MagnitudeStudy::draw()
 
 	if (m_bWaitingForResponse)
 	{
-		Renderer::getInstance().drawUIText(
-			"ACUTE",
-			glm::vec4(0.6f, 0.3f, 0.3f, 1.f),
-			glm::vec3(0.f),
-			glm::quat(),
-			m_ivec2Screen.x / 20.f,
-			Renderer::HEIGHT,
-			Renderer::LEFT,
-			Renderer::BOTTOM_LEFT
-		);
-
-		Renderer::getInstance().drawUIText(
-			"OBTUSE",
-			glm::vec4(0.6f, 0.3f, 0.3f, 1.f),
-			glm::vec3(m_ivec2Screen.x, 0.f, 0.f),
-			glm::quat(),
-			m_ivec2Screen.x / 20.f,
-			Renderer::HEIGHT,
-			Renderer::RIGHT,
-			Renderer::BOTTOM_RIGHT
-		);
 	}
 
 	if (m_bDisplayCondition)
@@ -373,7 +357,7 @@ void MagnitudeStudy::generateTrials(bool randomOrder)
 	for (auto a : { 0.f , 15.f, 30.f })					// view angles
 		for (auto d : { 1.f })							// view distance factors
 			for (auto r : { 0.f, 45.f, 90.f, 135.f })	// rod angles
-				for (auto l : { 5.f, 10.f })			// rod lengths
+				for (auto l : { 10.f, 20.f })			// rod lengths
 					for (auto f : { true, false })		// fishtank mode
 						m_vExperimentConditions.push_back(StudyCondition({ a, d, r, l, f }));
 					
@@ -461,7 +445,7 @@ void MagnitudeStudy::loadCondition(StudyCondition &c)
 
 	m_tStimulusStart += std::chrono::milliseconds(static_cast<int>(m_fStimulusDelay * 1000.f));
 
-	m_bBlockInput = true;
+	m_bBlockInput = false;
 }
 
 bool MagnitudeStudy::moveScreen(float viewAngle, bool forceMove)
@@ -496,13 +480,7 @@ void MagnitudeStudy::receive(void * data)
 	{
 		if (m_bStudyMode)
 		{
-			if (eventData[1] == GLFW_KEY_SPACE && !m_bPaused)
-			{
-				writeToLog();
-				next();
-			}
-
-			if (eventData[1] == GLFW_KEY_ENTER && m_bPaused)
+			if (eventData[1] == GLFW_KEY_SPACE && m_bPaused)
 			{
 				m_bPaused = false;
 				loadCondition(m_vExperimentConditions.back());
