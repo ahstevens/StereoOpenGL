@@ -14,6 +14,7 @@
 #include "GLFWInputBroadcaster.h"
 #include "Renderer.h"
 #include "AngleStudy.h"
+#include "MagnitudeStudy.h"
 
 
 //-----------------------------------------------------------------------------
@@ -52,6 +53,7 @@ private:
 	Renderer::SceneViewInfo m_sviUIInfo;
 
 	AngleStudy*	m_pAngleStudy;
+	MagnitudeStudy* m_pMagStudy;
 
 private:
 	void listDisplayInfo();

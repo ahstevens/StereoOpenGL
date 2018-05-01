@@ -17,7 +17,7 @@ MagnitudeStudy::MagnitudeStudy()
 	, m_bPaused(false)
 	, m_bShowStimulus(true)
 	, m_bBlockInput(false)
-	, m_bLockViewCOP(false)
+	, m_bFishtank(false)
 	, m_bShowDiagram(false)
 	, m_bWaitingForResponse(false)
 	, m_bDisplayCondition(false)
@@ -51,9 +51,6 @@ void MagnitudeStudy::init(glm::ivec2 screenRes, glm::mat4 worldToScreenTransform
 	if (m_pSocket == NULL)
 		m_pSocket = new WinsockClient();
 
-	if (m_pHinge == NULL)
-		m_pHinge = new Hinge(m_fHingeSize, 90.f);
-
 	if (m_pDiagram == NULL)
 		m_pDiagram = new ViewingConditionsDiagram(m_mat4Screen, m_ivec2Screen);
 
@@ -65,7 +62,7 @@ void MagnitudeStudy::reset()
 	m_bStudyMode = false;
 	m_bPaused = false;
 	m_bBlockInput = false;
-	m_bLockViewCOP = false;
+	m_bFishtank = false;
 	m_bWaitingForResponse = false;
 
 	m_strServerAddress = "192.168.137.";
@@ -76,10 +73,6 @@ void MagnitudeStudy::reset()
 	m_fViewAngle = 0.f;
 	m_fViewDist = 57.f;
 	m_fEyeSep = 6.7;
-
-	m_pHinge->setPos(glm::vec3(0.f, 0.f, -5.f));
-	m_pHinge->setLength(m_fHingeSize);
-	m_pHinge->setAngle(90.f);
 
 	m_Vector.length = m_fHingeSize;
 	m_Vector.angle = 0.f;
@@ -93,12 +86,12 @@ void MagnitudeStudy::reset()
 
 	m_MeasuringRod.length = m_fHingeSize;
 	m_MeasuringRod.angle = -90.f;
-	m_MeasuringRod.diameter = 0.25f;
+	m_MeasuringRod.diameter = 0.15f;
 	m_MeasuringRod.rotAxis = glm::vec3(0.f, 0.f, 1.f);
 	m_MeasuringRod.originCenter = false;
 	m_MeasuringRod.pos = glm::vec3(0.f, glm::length(m_mat4Screen[1]) / 3.f, 0.f);
 	m_MeasuringRod.color = glm::vec3(1.f);
-	m_MeasuringRod.shaderName = "rings";
+	m_MeasuringRod.shaderName = "lighting";
 	m_MeasuringRod.textureName = "white";
 
 	m_fCOPAngle = m_fViewAngle;
@@ -106,9 +99,6 @@ void MagnitudeStudy::reset()
 
 	m_fMinStep = 2.f;
 	m_fStepSize = m_fMinStep;
-
-	m_strLastResponse = std::string();
-	m_nReversals = 1; // ignore the first
 
 	m_vExperimentConditions.clear();
 
@@ -346,13 +336,12 @@ void MagnitudeStudy::draw()
 		ss.precision(3);
 
 		StudyCondition c = m_vExperimentConditions.back();
-		ss << "Viewing Angle: " << (m_bLockViewCOP ? m_fViewAngle : m_fCOPAngle) << std::endl;
-		ss << "Viewing Distance: " << (m_bLockViewCOP ? m_fViewDist : m_fCOPDist) << std::endl;
-		ss << "Hinge Angle: " << m_pHinge->getAngle() << std::endl;
+		ss << "Viewing Angle: " << (m_bFishtank ? m_fViewAngle : m_fCOPAngle) << std::endl;
+		ss << "Viewing Distance: " << (m_bFishtank ? m_fViewDist : m_fCOPDist) << std::endl;
 		ss << "Target Rod Angle: " << m_Vector.angle << std::endl;
 		ss << "Target Rod Length: " << m_Vector.length << std::endl;
 		ss << "Measuring Rod Length: " << m_MeasuringRod.length << std::endl;
-		ss << (m_bLockViewCOP ? "Fishtank Mode" : "Untracked Stereo Mode");		
+		ss << (m_bFishtank ? "Fishtank Mode" : "Untracked Stereo Mode");		
 
 		Renderer::getInstance().drawUIText(
 			ss.str(),
@@ -371,11 +360,9 @@ void MagnitudeStudy::begin()
 {
 	generateTrials();
 
-	m_strLastResponse = std::string();
-
 	DataLogger::getInstance().setID(m_strName);
 	DataLogger::getInstance().openLog(m_strName);
-	DataLogger::getInstance().setHeader("trial,view.angle,view.dist.factor,fishtank,start.angle,hinge.length,hinge.z.pos,hinge.angle,response");
+	DataLogger::getInstance().setHeader("trial,ipd,view.dist,view.angle,view.dist.factor,fishtank,rod.angle,rod.length,response");
 	DataLogger::getInstance().start();
 
 	m_bPaused = true;
@@ -383,19 +370,13 @@ void MagnitudeStudy::begin()
 
 void MagnitudeStudy::generateTrials(bool randomOrder)
 {
-	for (auto a : { 0.f })		// angles
-		for (auto d : { 1.f, 0.5f, 2.f })	// distances
-			for (auto f : { true, false })	// fishtank mode (eye-couple perspective)
-			{
-				StudyCondition cond;
-				cond.hingeLen = m_fHingeSize;
-				cond.hingePos = glm::vec3(0.f, 0.f, -m_fHingeSize / 2.f);
-				cond.startAngle = 90.f + (m_AngleDistribution(m_Generator) * m_BoolDistribution(m_Generator) ? 1.f : -1.f);
-				cond.viewAngle = m_BoolDistribution(m_Generator) ? a : -a;
-				cond.viewDistFactor = d;
-				cond.matchedView = f;
-				m_vExperimentConditions.push_back(cond);
-			}
+	for (auto a : { 0.f , 15.f, 30.f })					// view angles
+		for (auto d : { 1.f })							// view distance factors
+			for (auto r : { 0.f, 45.f, 90.f, 135.f })	// rod angles
+				for (auto l : { 5.f, 10.f })			// rod lengths
+					for (auto f : { true, false })		// fishtank mode
+						m_vExperimentConditions.push_back(StudyCondition({ a, d, r, l, f }));
+					
 
 	m_nTrials = m_vExperimentConditions.size();
 
@@ -403,49 +384,18 @@ void MagnitudeStudy::generateTrials(bool randomOrder)
 		std::shuffle(m_vExperimentConditions.begin(), m_vExperimentConditions.end(), m_Generator);
 }
 
-void MagnitudeStudy::next(StudyResponse response)
+void MagnitudeStudy::next()
 {
 	m_bWaitingForResponse = false;
 
-	if (response == ACUTE) // perceived as acute
-	{
-		m_pHinge->setAngle(m_pHinge->getAngle() + m_fStepSize);
+	m_vExperimentConditions.pop_back();
 
-		if (m_strLastResponse.compare("obtuse") == 0)
-			m_nReversals--;		
+	moveScreen(0);
 
-		m_strLastResponse = "acute";
-	}
-	else if (response == OBTUSE) // perceived as obtuse
-	{
-		m_pHinge->setAngle(m_pHinge->getAngle() - m_fStepSize);
+	m_bPaused = true;
 
-		if (m_strLastResponse.compare("acute") == 0)		
-			m_nReversals--;
-
-		m_strLastResponse = "obtuse";
-	}
-
-	if (m_nReversals == 0)
-	{
-		m_nReversals = 1; // add an extra for initial mistakes, which are not recorded
-
-		m_vExperimentConditions.pop_back();
-
-		moveScreen(0);
-
-		m_bPaused = true;
-
-		m_strLastResponse = std::string();
-
-		if (m_vExperimentConditions.size() == 0)
-			end();
-	}
-	else
-	{
-		m_tStimulusStart = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(static_cast<int>(m_fStimulusDelay * 1000.f));
-		m_bBlockInput = true;
-	}
+	if (m_vExperimentConditions.size() == 0)
+		end();
 }
 
 void MagnitudeStudy::end()
@@ -457,7 +407,7 @@ void MagnitudeStudy::end()
 
 glm::vec3 MagnitudeStudy::getCOP()
 {
-	if (m_bLockViewCOP)
+	if (m_bFishtank)
 		return glm::vec3(glm::rotate(glm::mat4(), glm::radians(m_fViewAngle), glm::vec3(0.f, 1.f, 0.f)) * glm::vec4(0.f, 0.f, m_fViewDist, 1.f));
 	else
 		return glm::vec3(glm::rotate(glm::mat4(), glm::radians(m_fCOPAngle), glm::vec3(0.f, 1.f, 0.f)) * glm::vec4(0.f, 0.f, m_fCOPDist, 1.f));
@@ -468,42 +418,43 @@ float MagnitudeStudy::getEyeSep()
 	return m_fEyeSep;
 }
 
-void MagnitudeStudy::writeToLog(StudyResponse response)
+void MagnitudeStudy::writeToLog()
 {
+	DataLogger::getInstance().setHeader("trial,ipd,view.dist,view.angle,view.dist.factor,fishtank,rod.angle,rod.length,response");
 	std::string logEntry;
 	logEntry += std::to_string(m_nTrials - m_vExperimentConditions.size());
+	logEntry += ",";
+	logEntry += std::to_string(m_fEyeSep);
+	logEntry += ",";
+	logEntry += std::to_string(m_fViewDist);
 	logEntry += ",";
 	logEntry += std::to_string(m_vExperimentConditions.back().viewAngle);
 	logEntry += ",";
 	logEntry += std::to_string(m_vExperimentConditions.back().viewDistFactor);
 	logEntry += ",";
-	logEntry += std::to_string(m_vExperimentConditions.back().matchedView);
+	logEntry += std::to_string(m_vExperimentConditions.back().fishtank);
 	logEntry += ",";
-	logEntry += std::to_string(m_vExperimentConditions.back().startAngle);
+	logEntry += std::to_string(m_vExperimentConditions.back().angle);
 	logEntry += ",";
-	logEntry += std::to_string(m_vExperimentConditions.back().hingeLen);
+	logEntry += std::to_string(m_vExperimentConditions.back().len);
 	logEntry += ",";
-	logEntry += std::to_string(m_vExperimentConditions.back().hingePos.z);
-	logEntry += ",";
-	logEntry += std::to_string(m_pHinge->getAngle());
-	logEntry += ",";
-	logEntry += response == ACUTE ? "acute" : "obtuse";
-	logEntry += ",";
+	logEntry += std::to_string(m_MeasuringRod.length);
 
 	DataLogger::getInstance().logMessage(logEntry);
 }
 
 void MagnitudeStudy::loadCondition(StudyCondition &c)
 {
-	m_pHinge->setAngle(c.startAngle);
-	m_pHinge->setLength(c.hingeLen);
-	m_pHinge->setPos(c.hingePos);
+	m_Vector.angle = c.angle;
+	m_Vector.length = c.len;
+
+	m_MeasuringRod.length = 1.f;
 
 	m_fCOPDist = m_fViewDist * c.viewDistFactor;
 
-	m_bLockViewCOP = m_vExperimentConditions.back().matchedView;
+	m_bFishtank = c.fishtank;
 
-	if (moveScreen(m_vExperimentConditions.back().viewAngle))
+	if (moveScreen(c.viewAngle))
 		m_tStimulusStart = m_tMoveStart + std::chrono::milliseconds(static_cast<int>(m_fMoveTime * 1000.f));
 	else
 		m_tStimulusStart =  std::chrono::high_resolution_clock::now();
@@ -545,21 +496,13 @@ void MagnitudeStudy::receive(void * data)
 	{
 		if (m_bStudyMode)
 		{
-			if (eventData[1] == GLFW_KEY_LEFT_SHIFT)
+			if (eventData[1] == GLFW_KEY_SPACE && !m_bPaused)
 			{
-				if (m_nReversals <= 10u) // ignore the first reversal
-					writeToLog(ACUTE);
-				next(ACUTE);
+				writeToLog();
+				next();
 			}
 
-			if (eventData[1] == GLFW_KEY_RIGHT_SHIFT)
-			{
-				if (m_nReversals <= 10u) // ignore the first reversal
-					writeToLog(OBTUSE);
-				next(OBTUSE);
-			}
-
-			if (eventData[1] == GLFW_KEY_SPACE && m_bPaused)
+			if (eventData[1] == GLFW_KEY_ENTER && m_bPaused)
 			{
 				m_bPaused = false;
 				loadCondition(m_vExperimentConditions.back());
@@ -713,9 +656,9 @@ void MagnitudeStudy::receive(void * data)
 
 			if (eventData[1] == GLFW_KEY_F8)
 			{
-				m_bLockViewCOP = !m_bLockViewCOP;
-				std::string msg("COP and View Point ");
-				msg += (m_bLockViewCOP ? "locked" : "unlocked");
+				m_bFishtank = !m_bFishtank;
+				std::string msg("Fishtank Mode ");
+				msg += (m_bFishtank ? "on" : "off");
 				Renderer::getInstance().showMessage(msg);
 			}
 
@@ -785,11 +728,9 @@ void MagnitudeStudy::receive(void * data)
 		{
 			if (eventData[1] == GLFW_KEY_LEFT)
 			{
-				m_pHinge->setAngle(m_pHinge->getAngle() + 1.f);
 			}
 			if (eventData[1] == GLFW_KEY_RIGHT)
 			{
-				m_pHinge->setAngle(m_pHinge->getAngle() - 1.f);
 			}
 
 			if (eventData[1] == GLFW_KEY_KP_4)
@@ -808,11 +749,6 @@ void MagnitudeStudy::receive(void * data)
 			{
 				m_Vector.length = std::max(m_Vector.length - 0.1f, 0.1f);
 			}
-
-			if (eventData[1] == GLFW_KEY_UP)
-				m_MeasuringRod.length += 0.1f;
-			if (eventData[1] == GLFW_KEY_DOWN)
-				m_MeasuringRod.length = std::max(m_MeasuringRod.length - 0.1f, 0.1f);
 
 			if (eventData[1] == GLFW_KEY_LEFT_BRACKET)
 				m_fCOPAngle -= angleDelta;
@@ -839,5 +775,11 @@ void MagnitudeStudy::receive(void * data)
 			if (eventData[1] == GLFW_KEY_PERIOD)
 				m_pDiagram->setProjectionAngle(m_pDiagram->getProjectionAngle() + 1.f);
 		}
+
+		if (eventData[1] == GLFW_KEY_UP)
+			m_MeasuringRod.length += 0.1f;
+		if (eventData[1] == GLFW_KEY_DOWN)
+			m_MeasuringRod.length = std::max(m_MeasuringRod.length - 0.1f, 0.1f);
+
 	}
 }

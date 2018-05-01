@@ -54,10 +54,9 @@ private:
 	struct StudyCondition {
 		float viewAngle;
 		float viewDistFactor;
-		int startAngle;
-		float hingeLen;
-		glm::vec3 hingePos;
-		bool matchedView;
+		int angle;
+		float len;
+		bool fishtank;
 	};
 
 	struct Rod {
@@ -78,7 +77,6 @@ private:
 
 	std::future<bool> m_SocketFuture;
 	WinsockClient* m_pSocket;
-	Hinge* m_pHinge;
 	Rod m_Vector;
 	Rod m_MeasuringRod;
 
@@ -94,7 +92,7 @@ private:
 	bool m_bPaused;
 	bool m_bShowStimulus;
 	bool m_bBlockInput;
-	bool m_bLockViewCOP;
+	bool m_bFishtank;
 	bool m_bShowDiagram;
 	bool m_bWaitingForResponse;
 	bool m_bDisplayCondition;
@@ -117,9 +115,6 @@ private:
 	std::vector<StudyCondition> m_vExperimentConditions;
 	unsigned m_nTrials;
 
-	std::string m_strLastResponse;
-	int m_nReversals;
-
 	float m_fStimulusTime;
 	float m_fStimulusDelay;
 	std::chrono::high_resolution_clock::time_point m_tStimulusStart;
@@ -136,8 +131,8 @@ private:
 
 private:
 	void generateTrials(bool randomOrder = true);
-	void next(StudyResponse response);
-	void writeToLog(StudyResponse response);
+	void next();
+	void writeToLog();
 	void loadCondition(StudyCondition &c);
 	bool moveScreen(float viewAngle, bool forceMove = false);
 	void receive(void* data);
