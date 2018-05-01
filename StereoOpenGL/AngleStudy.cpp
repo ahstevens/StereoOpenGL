@@ -1,4 +1,4 @@
-#include "StudyInterface.h"
+#include "AngleStudy.h"
 
 #include "Renderer.h"
 #include "DataLogger.h"
@@ -8,7 +8,7 @@
 #include <algorithm>
 #include <gtc/matrix_transform.hpp>
 
-StudyInterface::StudyInterface()
+AngleStudy::AngleStudy()
 	: m_pSocket(NULL)
 	, m_pHinge(NULL)
 	, m_fHingeSize(10.f)
@@ -29,7 +29,7 @@ StudyInterface::StudyInterface()
 }
 
 
-StudyInterface::~StudyInterface()
+AngleStudy::~AngleStudy()
 {
 	if (m_pSocket)
 	{
@@ -44,7 +44,7 @@ StudyInterface::~StudyInterface()
 		delete m_pDiagram;
 }
 
-void StudyInterface::init(glm::ivec2 screenRes, glm::mat4 worldToScreenTransform)
+void AngleStudy::init(glm::ivec2 screenRes, glm::mat4 worldToScreenTransform)
 {
 	DataLogger::getInstance().setLogDirectory("logs");
 
@@ -64,7 +64,7 @@ void StudyInterface::init(glm::ivec2 screenRes, glm::mat4 worldToScreenTransform
 	reset();
 }
 
-void StudyInterface::reset()
+void AngleStudy::reset()
 {
 	m_bStudyMode = false;
 	m_bPaused = false;
@@ -145,7 +145,7 @@ void StudyInterface::reset()
 				m_vec3GridPoints.push_back(glm::vec3(m_mat4Screen * glm::vec4(i/(gridRes/2.f) - 1.f, j/(gridRes/2.f) - 1.f, k/(gridRes/2.f) - 1.f, 1.f)));
 }
 
-void StudyInterface::update()
+void AngleStudy::update()
 {
 	using clock = std::chrono::high_resolution_clock;
 	auto tick = clock::now();
@@ -198,7 +198,7 @@ void StudyInterface::update()
 }
 
 
-void StudyInterface::draw()
+void AngleStudy::draw()
 {
 	if (m_bShowDiagram)
 	{
@@ -371,7 +371,7 @@ void StudyInterface::draw()
 	}
 }
 
-void StudyInterface::begin()
+void AngleStudy::begin()
 {
 	generateTrials();
 
@@ -385,7 +385,7 @@ void StudyInterface::begin()
 	m_bPaused = true;
 }
 
-void StudyInterface::generateTrials(bool randomOrder)
+void AngleStudy::generateTrials(bool randomOrder)
 {
 	for (auto a : { 0.f })		// angles
 		for (auto d : { 1.f, 0.5f, 2.f })	// distances
@@ -407,7 +407,7 @@ void StudyInterface::generateTrials(bool randomOrder)
 		std::shuffle(m_vExperimentConditions.begin(), m_vExperimentConditions.end(), m_Generator);
 }
 
-void StudyInterface::next(StudyResponse response)
+void AngleStudy::next(StudyResponse response)
 {
 	m_bWaitingForResponse = false;
 
@@ -452,14 +452,14 @@ void StudyInterface::next(StudyResponse response)
 	}
 }
 
-void StudyInterface::end()
+void AngleStudy::end()
 {
 	moveScreen(0);
 	m_bStudyMode = false;
 	DataLogger::getInstance().closeLog();
 }
 
-glm::vec3 StudyInterface::getCOP()
+glm::vec3 AngleStudy::getCOP()
 {
 	if (m_bLockViewCOP)
 		return glm::vec3(glm::rotate(glm::mat4(), glm::radians(m_fViewAngle), glm::vec3(0.f, 1.f, 0.f)) * glm::vec4(0.f, 0.f, m_fViewDist, 1.f));
@@ -467,12 +467,12 @@ glm::vec3 StudyInterface::getCOP()
 		return glm::vec3(glm::rotate(glm::mat4(), glm::radians(m_fCOPAngle), glm::vec3(0.f, 1.f, 0.f)) * glm::vec4(0.f, 0.f, m_fCOPDist, 1.f));
 }
 
-float StudyInterface::getEyeSep()
+float AngleStudy::getEyeSep()
 {
 	return m_fEyeSep;
 }
 
-void StudyInterface::writeToLog(StudyResponse response)
+void AngleStudy::writeToLog(StudyResponse response)
 {
 	std::string logEntry;
 	logEntry += std::to_string(m_nTrials - m_vExperimentConditions.size());
@@ -497,7 +497,7 @@ void StudyInterface::writeToLog(StudyResponse response)
 	DataLogger::getInstance().logMessage(logEntry);
 }
 
-void StudyInterface::loadCondition(StudyCondition &c)
+void AngleStudy::loadCondition(StudyCondition &c)
 {
 	m_pHinge->setAngle(c.startAngle);
 	m_pHinge->setLength(c.hingeLen);
@@ -517,7 +517,7 @@ void StudyInterface::loadCondition(StudyCondition &c)
 	m_bBlockInput = true;
 }
 
-bool StudyInterface::moveScreen(float viewAngle, bool forceMove)
+bool AngleStudy::moveScreen(float viewAngle, bool forceMove)
 {
 	if (m_fViewAngle == viewAngle && !forceMove)
 		return false;
@@ -536,7 +536,7 @@ bool StudyInterface::moveScreen(float viewAngle, bool forceMove)
 	return true;
 }
 
-void StudyInterface::receive(void * data)
+void AngleStudy::receive(void * data)
 {
 	//if (m_bBlockInput)
 	//	return;

@@ -60,13 +60,16 @@
     <ClCompile Include="DataLogger.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="StudyInterface.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ViewingConditionsDiagram.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DistortionUtils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AngleStudy.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MagnitudeStudy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -110,13 +113,16 @@
     <ClInclude Include="DataLogger.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="StudyInterface.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ViewingConditionsDiagram.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DistortionUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AngleStudy.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MagnitudeStudy.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

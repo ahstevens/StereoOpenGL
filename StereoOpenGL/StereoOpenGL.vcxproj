@@ -172,10 +172,11 @@
     <ClCompile Include="GLFWInputBroadcaster.cpp" />
     <ClCompile Include="Icosphere.cpp" />
     <ClCompile Include="LightingSystem.cpp" />
+    <ClCompile Include="MagnitudeStudy.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="shaderset.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="StudyInterface.cpp" />
+    <ClCompile Include="AngleStudy.cpp" />
     <ClCompile Include="ViewingConditionsDiagram.cpp" />
     <ClCompile Include="WinsockClient.cpp" />
   </ItemGroup>
@@ -191,9 +192,10 @@
     <ClInclude Include="GLSLpreamble.h" />
     <ClInclude Include="Icosphere.h" />
     <ClInclude Include="LightingSystem.h" />
+    <ClInclude Include="MagnitudeStudy.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="shaderset.h" />
-    <ClInclude Include="StudyInterface.h" />
+    <ClInclude Include="AngleStudy.h" />
     <ClInclude Include="ViewingConditionsDiagram.h" />
     <ClInclude Include="WinsockClient.h" />
   </ItemGroup>

@@ -93,7 +93,7 @@ Engine::Engine(int argc, char *argv[], int mode)
 	, m_pMainWindow(NULL)
 	, m_pLeftEyeFramebuffer(NULL)
 	, m_pRightEyeFramebuffer(NULL)
-	, m_pStudyInterface(NULL)
+	, m_pAngleStudy(NULL)
 	, m_bShowDiagnostics(false)
 {
 };
@@ -165,9 +165,9 @@ bool Engine::init()
 		glm::vec4(g_vec3ScreenPos, 1.f)
 	);
 
-	m_pStudyInterface = new StudyInterface();
-	m_pStudyInterface->init(m_ivec2MainWindowSize, screenTrans);
-	GLFWInputBroadcaster::getInstance().addObserver(m_pStudyInterface);
+	m_pAngleStudy = new AngleStudy();
+	m_pAngleStudy->init(m_ivec2MainWindowSize, screenTrans);
+	GLFWInputBroadcaster::getInstance().addObserver(m_pAngleStudy);
 
 	return true;
 }
@@ -222,10 +222,10 @@ bool Engine::initGL(bool stereoContext)
 //-----------------------------------------------------------------------------
 void Engine::Shutdown()
 {
-	if (m_pStudyInterface)
+	if (m_pAngleStudy)
 	{
-		GLFWInputBroadcaster::getInstance().removeObserver(m_pStudyInterface);
-		delete m_pStudyInterface;
+		GLFWInputBroadcaster::getInstance().removeObserver(m_pAngleStudy);
+		delete m_pAngleStudy;
 	}
 
 	GLFWInputBroadcaster::getInstance().removeObserver(this);
@@ -260,7 +260,7 @@ void Engine::receive(void * data)
 
 	if (eventData[0] == GLFWInputBroadcaster::EVENT::KEY_DOWN)
 	{
-		if (eventData[1] == GLFW_KEY_ESCAPE && ((m_pStudyInterface->isStudyActive() && (glfwGetKey(m_pMainWindow, GLFW_KEY_LEFT_SHIFT) || glfwGetKey(m_pMainWindow, GLFW_KEY_RIGHT_SHIFT))) || !m_pStudyInterface->isStudyActive()))
+		if (eventData[1] == GLFW_KEY_ESCAPE && ((m_pAngleStudy->isStudyActive() && (glfwGetKey(m_pMainWindow, GLFW_KEY_LEFT_SHIFT) || glfwGetKey(m_pMainWindow, GLFW_KEY_RIGHT_SHIFT))) || !m_pAngleStudy->isStudyActive()))
 		{
 			glfwSetWindowShouldClose(m_pMainWindow, GLFW_TRUE);
 		}
@@ -320,15 +320,15 @@ void Engine::update()
 	float width_cm = m_ivec2MainWindowSize.x * sizer;
 	float height_cm = m_ivec2MainWindowSize.y * sizer;
 
-	m_pStudyInterface->update();
+	m_pAngleStudy->update();
 
 
 	if (g_bStereo)
 	{
-		glm::vec3 COP = m_pStudyInterface->getCOP();
+		glm::vec3 COP = m_pAngleStudy->getCOP();
 		glm::quat COPRot = glm::inverse(glm::lookAt(COP, glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f)));
 		glm::vec3 COPRight = glm::normalize(glm::mat3_cast(COPRot)[0]);
-		glm::vec3 COPOffset = COPRight * m_pStudyInterface->getEyeSep() * 0.5f;
+		glm::vec3 COPOffset = COPRight * m_pAngleStudy->getEyeSep() * 0.5f;
 
 		// Update eye positions using current head position
 		glm::vec3 leftEyePos = COP - COPOffset;
@@ -342,8 +342,8 @@ void Engine::update()
 	}
 	else
 	{
-		m_sviMonoInfo.view = glm::translate(glm::mat4(), -m_pStudyInterface->getCOP());
-		m_sviMonoInfo.projection = getViewingFrustum(m_pStudyInterface->getCOP(), g_vec3ScreenPos, g_vec3ScreenNormal, g_vec3ScreenUp, glm::vec2(width_cm, height_cm));
+		m_sviMonoInfo.view = glm::translate(glm::mat4(), -m_pAngleStudy->getCOP());
+		m_sviMonoInfo.projection = getViewingFrustum(m_pAngleStudy->getCOP(), g_vec3ScreenPos, g_vec3ScreenNormal, g_vec3ScreenUp, glm::vec2(width_cm, height_cm));
 	}
 
 }
@@ -395,7 +395,7 @@ void Engine::makeScene()
 	//	glm::translate(glm::mat4(), glm::vec3(g_pHinge->getLength() * 0.75f, cubeSize / 2.f - screenSize_cm.y / 2.f, -5.f-g_pHinge->getLength())) * glm::scale(glm::mat4(), glm::vec3(cubeSize)),
 	//	"shadow");
 
-	m_pStudyInterface->draw();
+	m_pAngleStudy->draw();
 
 	if (m_bShowDiagnostics)
 		drawDiagnostics();
@@ -406,7 +406,7 @@ void Engine::makeScene()
 
 void Engine::render()
 {
-	Renderer::getInstance().sortTransparentObjects(m_pStudyInterface->getCOP());
+	Renderer::getInstance().sortTransparentObjects(m_pAngleStudy->getCOP());
 
 	if (g_bStereo)
 	{

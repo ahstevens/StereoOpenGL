@@ -16,11 +16,11 @@
 #define STUDYPARAM_NUMERIC	1 << 3
 #define STUDYPARAM_IP		1 << 4
 
-class StudyInterface : public GLFWInputObserver
+class AngleStudy : public GLFWInputObserver
 {
 public:
-	StudyInterface();
-	~StudyInterface();
+	AngleStudy();
+	~AngleStudy();
 
 	void init(glm::ivec2 screenRes, glm::mat4 worldToScreenTransform);
 

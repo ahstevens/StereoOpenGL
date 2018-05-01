@@ -13,7 +13,7 @@
 
 #include "GLFWInputBroadcaster.h"
 #include "Renderer.h"
-#include "StudyInterface.h"
+#include "AngleStudy.h"
 
 
 //-----------------------------------------------------------------------------
@@ -51,7 +51,7 @@ private:
 	Renderer::SceneViewInfo m_sviRightEyeInfo;
 	Renderer::SceneViewInfo m_sviUIInfo;
 
-	StudyInterface*	m_pStudyInterface;
+	AngleStudy*	m_pAngleStudy;
 
 private:
 	void listDisplayInfo();
