@@ -36,6 +36,8 @@ public:
 	glm::vec3 getCOP();
 	float getEyeSep();
 
+	std::string conditionString();
+
 	bool isStudyActive() { return m_bStudyMode; }
 
 private:
@@ -54,6 +56,7 @@ private:
 	struct StudyCondition {
 		float viewAngle;
 		float viewDistFactor;
+		float eyeSeparation;
 		float angle;
 		float len;
 		bool fishtank;
@@ -96,6 +99,7 @@ private:
 	bool m_bShowDiagram;
 	bool m_bWaitingForResponse;
 	bool m_bDisplayCondition;
+	bool m_bScreenshotConditions;
 
 	float m_fCOPDist;
 	float m_fCOPAngle;

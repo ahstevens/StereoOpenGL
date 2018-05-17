@@ -281,15 +281,17 @@ void Engine::receive(void * data)
 			glfwSetWindowShouldClose(m_pMainWindow, GLFW_TRUE);
 		}
 
-		if (eventData[1] == GLFW_KEY_PRINT_SCREEN)
-		{
-			Renderer::getInstance().snapshotBackBufferToTGA(glm::ivec4(0, 0, m_ivec2MainWindowSize), "snapshot");
-		}
-
 		if (eventData[1] == GLFW_KEY_F11)
 		{
 			m_bShowDiagnostics = !m_bShowDiagnostics;
 		}
+
+		if (eventData[1] == GLFW_KEY_PRINT_SCREEN && !m_pMagStudy->isStudyActive())
+		{
+			Renderer::getInstance().snapshotFrameBufferToTGA(m_pLeftEyeFramebuffer->m_nResolveFramebufferId, glm::ivec4(0, 0, m_sviLeftEyeInfo.m_nRenderWidth, m_sviLeftEyeInfo.m_nRenderHeight), "lefteye_" + m_pMagStudy->conditionString(), false);
+			Renderer::getInstance().snapshotFrameBufferToTGA(m_pRightEyeFramebuffer->m_nResolveFramebufferId, glm::ivec4(0, 0, m_sviRightEyeInfo.m_nRenderWidth, m_sviRightEyeInfo.m_nRenderHeight), "righteye_" + m_pMagStudy->conditionString(), false);
+		}
+
 	}
 
 	if (eventData[0] == GLFWInputBroadcaster::EVENT::KEY_DOWN || eventData[0] == GLFWInputBroadcaster::EVENT::KEY_HOLD)

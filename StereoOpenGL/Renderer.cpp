@@ -373,8 +373,11 @@ bool Renderer::CreateFrameBuffer(int nWidth, int nHeight, FramebufferDesc &frame
 	return true;
 }
 
-bool Renderer::snapshotBackBufferToTGA(glm::ivec4 rect, std::string filename, bool append_timestamp)
+bool Renderer::snapshotFrameBufferToTGA(GLuint framebufferID, glm::ivec4 rect, std::string filename, bool append_timestamp)
 {
+	glBindFramebuffer(GL_FRAMEBUFFER, framebufferID);
+	glNamedFramebufferReadBuffer(framebufferID, GL_COLOR_ATTACHMENT0);
+
 	//This prevents the images getting padded 
 	// when the width multiplied by 3 is not a multiple of 4
 	glPixelStorei(GL_PACK_ALIGNMENT, 1);
@@ -390,6 +393,8 @@ bool Renderer::snapshotBackBufferToTGA(glm::ivec4 rect, std::string filename, bo
 	glReadPixels((GLint)rect[0], (GLint)rect[1],
 		(GLint)rect[2], (GLint)rect[3],
 		GL_BGR, GL_UNSIGNED_BYTE, dataBuffer);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	if (append_timestamp)
 	{

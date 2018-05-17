@@ -6,6 +6,7 @@
 
 #include <GLFW/glfw3.h>
 #include <algorithm>
+#include <iomanip> // for std::setprecision()
 #include <gtc/matrix_transform.hpp>
 
 MagnitudeStudy::MagnitudeStudy()
@@ -319,9 +320,9 @@ void MagnitudeStudy::draw()
 		std::stringstream ss;
 		ss.precision(3);
 
-		StudyCondition c = m_vExperimentConditions.back();
 		ss << "Viewing Angle: " << (m_bFishtank ? m_fViewAngle : m_fCOPAngle) << std::endl;
 		ss << "Viewing Distance: " << (m_bFishtank ? m_fViewDist : m_fCOPDist) << std::endl;
+		ss << "Eye Separation: " << m_fEyeSep << std::endl;
 		ss << "Target Rod Angle: " << m_Vector.angle << std::endl;
 		ss << "Target Rod Length: " << m_Vector.length << std::endl;
 		ss << "Measuring Rod Length: " << m_MeasuringRod.length << std::endl;
@@ -354,12 +355,13 @@ void MagnitudeStudy::begin()
 
 void MagnitudeStudy::generateTrials(bool randomOrder)
 {
-	for (auto a : { 0.f , 15.f, 30.f })					// view angles
-		for (auto d : { 1.f })							// view distance factors
-			for (auto r : { 0.f, 45.f, 90.f, 135.f })	// rod angles
-				for (auto l : { 10.f, 20.f })			// rod lengths
-					for (auto f : { true, false })		// fishtank mode
-						m_vExperimentConditions.push_back(StudyCondition({ a, d, r, l, f }));
+	for (auto a : { 0.f , 15.f, 30.f })						// view angles
+		for (auto d : { 1.f })								// view distance factors
+			for (auto s : { 0.f, m_fEyeSep })				// eye separations (for mono/stereo)
+				for (auto r : { 0.f, 45.f, 90.f, 135.f })	// rod angles
+					for (auto l : { 10.f, 20.f })			// rod lengths
+						for (auto f : { true, false })		// fishtank mode
+							m_vExperimentConditions.push_back(StudyCondition({ a, d, s, r, l, f }));
 					
 
 	m_nTrials = m_vExperimentConditions.size();
@@ -402,9 +404,26 @@ float MagnitudeStudy::getEyeSep()
 	return m_fEyeSep;
 }
 
+std::string MagnitudeStudy::conditionString()
+{
+	std::stringstream ss;
+
+	ss << ((m_fEyeSep > 0.f) ? "stereo" : "mono");
+	ss << "_";
+	ss << (m_bFishtank ? "coupled" : "uncoupled");
+	ss << "_";
+	ss << "va" << std::fixed << std::setprecision(0) << m_fViewAngle;
+	ss << "_";
+	ss << "ra" << std::fixed << std::setprecision(0) << m_Vector.angle;
+	ss << "_";
+	ss << "rl" << std::fixed << std::setprecision(0) << m_Vector.length;
+
+	return ss.str();
+}
+
 void MagnitudeStudy::writeToLog()
 {
-	DataLogger::getInstance().setHeader("trial,ipd,view.dist,view.angle,view.dist.factor,fishtank,rod.angle,rod.length,response");
+	DataLogger::getInstance().setHeader("trial,ipd,view.dist,view.dist.factor,view.angle,fishtank,rod.angle,rod.length,response");
 	std::string logEntry;
 	logEntry += std::to_string(m_nTrials - m_vExperimentConditions.size());
 	logEntry += ",";
@@ -412,9 +431,9 @@ void MagnitudeStudy::writeToLog()
 	logEntry += ",";
 	logEntry += std::to_string(m_fViewDist);
 	logEntry += ",";
-	logEntry += std::to_string(m_vExperimentConditions.back().viewAngle);
-	logEntry += ",";
 	logEntry += std::to_string(m_vExperimentConditions.back().viewDistFactor);
+	logEntry += ",";
+	logEntry += std::to_string(m_vExperimentConditions.back().viewAngle);
 	logEntry += ",";
 	logEntry += std::to_string(m_vExperimentConditions.back().fishtank);
 	logEntry += ",";
@@ -437,6 +456,8 @@ void MagnitudeStudy::loadCondition(StudyCondition &c)
 	m_fCOPDist = m_fViewDist * c.viewDistFactor;
 
 	m_bFishtank = c.fishtank;
+
+	m_fEyeSep = c.eyeSeparation;
 
 	if (moveScreen(c.viewAngle))
 		m_tStimulusStart = m_tMoveStart + std::chrono::milliseconds(static_cast<int>(m_fMoveTime * 1000.f));
@@ -488,6 +509,9 @@ void MagnitudeStudy::receive(void * data)
 		}
 		else
 		{
+			if (eventData[1] == GLFW_KEY_BACKSPACE && m_pEditParam->buf.length() > 0)
+				m_pEditParam->buf.pop_back();
+
 
 			if (m_pEditParam)
 			{
