@@ -373,6 +373,82 @@ bool Renderer::CreateFrameBuffer(int nWidth, int nHeight, FramebufferDesc &frame
 	return true;
 }
 
+bool Renderer::snapshotBackBufferToTGA(glm::ivec4 rect, std::string filename, bool append_timestamp)
+{
+	//This prevents the images getting padded 
+	// when the width multiplied by 3 is not a multiple of 4
+	glPixelStorei(GL_PACK_ALIGNMENT, 1);
+
+	int nSize = rect[2] * rect[3] * 3;
+	// First let's create our buffer, 3 channels per Pixel
+	char* dataBuffer = (char*)malloc(nSize*sizeof(char));
+
+	if (!dataBuffer) return false;
+
+	// Let's fetch them from the backbuffer	
+	// We request the pixels in GL_BGR format, thanks to Berzeger for the tip
+	glReadPixels((GLint)rect[0], (GLint)rect[1],
+		(GLint)rect[2], (GLint)rect[3],
+		GL_BGR, GL_UNSIGNED_BYTE, dataBuffer);
+
+	if (append_timestamp)
+	{
+		time_t t = time(0);   // get time now
+		struct tm *now = localtime(&t);
+
+		/*** DATE ***/
+		// year
+		filename += "_" + std::to_string(now->tm_year + 1900) + "-";
+
+		// month
+		filename += std::to_string(now->tm_mon + 1) + "-";
+
+		// day
+		filename += std::to_string(now->tm_mday);
+
+		/*** TIME ***/
+		// hour
+		filename += "_" + std::to_string(now->tm_hour);
+
+		// minute
+		filename += "-" + std::to_string(now->tm_min);
+
+		// second
+		filename += "-" + std::to_string(now->tm_sec);
+	}
+
+	filename = "snapshots\\" + filename + ".tga";
+
+	//Now the file creation
+	FILE *filePtr = fopen(std::string(filename).c_str(), "wb");
+	if (!filePtr)
+	{
+		std::cerr << "ERROR: Could not save snapshot to " << filename << std::endl;
+		std::cerr << "Make sure the path is valid and that the 'snapshots' directory exists and try again." << std::endl;
+		return false;
+	}
+
+
+	unsigned char TGAheader[12] = { 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+	unsigned char header[6] = { 
+		rect[2] % 256, rect[2] / 256,
+		rect[3] % 256, rect[3] / 256,
+		24, 0 
+	};
+
+	// We write the headers
+	fwrite(TGAheader, sizeof(unsigned char), 12, filePtr);
+	fwrite(header, sizeof(unsigned char), 6, filePtr);
+
+	// And finally our image data
+	fwrite(dataBuffer, sizeof(GLubyte), nSize, filePtr);
+	fclose(filePtr);
+
+	std::cout << "Snapshot saved to " << filename << std::endl;
+
+	return true;
+}
+
 
 //-----------------------------------------------------------------------------
 // Purpose:

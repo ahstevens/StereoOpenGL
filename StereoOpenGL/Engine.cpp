@@ -281,6 +281,11 @@ void Engine::receive(void * data)
 			glfwSetWindowShouldClose(m_pMainWindow, GLFW_TRUE);
 		}
 
+		if (eventData[1] == GLFW_KEY_PRINT_SCREEN)
+		{
+			Renderer::getInstance().snapshotBackBufferToTGA(glm::ivec4(0, 0, m_ivec2MainWindowSize), "snapshot");
+		}
+
 		if (eventData[1] == GLFW_KEY_F11)
 		{
 			m_bShowDiagnostics = !m_bShowDiagnostics;
