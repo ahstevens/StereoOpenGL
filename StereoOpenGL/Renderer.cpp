@@ -423,8 +423,8 @@ bool Renderer::snapshotBackBufferToTGA(glm::ivec4 rect, std::string filename, bo
 	FILE *filePtr = fopen(std::string(filename).c_str(), "wb");
 	if (!filePtr)
 	{
-		std::cerr << "ERROR: Could not save snapshot to " << filename << std::endl;
-		std::cerr << "Make sure the path is valid and that the 'snapshots' directory exists and try again." << std::endl;
+		showMessage("ERROR: Could not save snapshot to " + filename);
+		showMessage("Make sure the path is valid and that the 'snapshots' directory exists and try again.");
 		return false;
 	}
 
@@ -444,7 +444,7 @@ bool Renderer::snapshotBackBufferToTGA(glm::ivec4 rect, std::string filename, bo
 	fwrite(dataBuffer, sizeof(GLubyte), nSize, filePtr);
 	fclose(filePtr);
 
-	std::cout << "Snapshot saved to " << filename << std::endl;
+	showMessage("Snapshot saved to " + filename);
 
 	return true;
 }
