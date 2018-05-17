@@ -39,6 +39,7 @@ private:
 
 	bool m_bGLInitialized;
 	bool m_bShowDiagnostics;
+	bool m_bConditionScreenshotsInProgress;
 
 	GLFWwindow *m_pMainWindow;
 	glm::ivec2 m_ivec2MainWindowSize;

@@ -373,7 +373,7 @@ bool Renderer::CreateFrameBuffer(int nWidth, int nHeight, FramebufferDesc &frame
 	return true;
 }
 
-bool Renderer::snapshotFrameBufferToTGA(GLuint framebufferID, glm::ivec4 rect, std::string filename, bool append_timestamp)
+bool Renderer::snapshotFrameBufferToTGA(GLuint framebufferID, glm::ivec4 rect, std::string filename, bool append_timestamp, bool silent)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, framebufferID);
 	glNamedFramebufferReadBuffer(framebufferID, GL_COLOR_ATTACHMENT0);
@@ -428,8 +428,20 @@ bool Renderer::snapshotFrameBufferToTGA(GLuint framebufferID, glm::ivec4 rect, s
 	FILE *filePtr = fopen(std::string(filename).c_str(), "wb");
 	if (!filePtr)
 	{
-		showMessage("ERROR: Could not save snapshot to " + filename);
-		showMessage("Make sure the path is valid and that the 'snapshots' directory exists and try again.");
+
+		std::string err1("ERROR: Could not save snapshot to " + filename);
+		std::string err2("Make sure the path is valid and that the 'snapshots' directory exists and try again.");
+
+		if (!silent)
+		{
+			showMessage(err1);
+			showMessage(err2);
+		}
+		else
+		{
+			printf("%s\n", err1);
+			printf("%s\n", err2);
+		}
 		return false;
 	}
 
@@ -449,7 +461,10 @@ bool Renderer::snapshotFrameBufferToTGA(GLuint framebufferID, glm::ivec4 rect, s
 	fwrite(dataBuffer, sizeof(GLubyte), nSize, filePtr);
 	fclose(filePtr);
 
-	showMessage("Snapshot saved to " + filename);
+	if (!silent)
+		showMessage("Snapshot saved to " + filename);
+	else
+		printf("Snapshot saved to %s\n", filename);
 
 	return true;
 }

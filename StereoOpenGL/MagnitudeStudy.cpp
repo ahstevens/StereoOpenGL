@@ -132,6 +132,8 @@ void MagnitudeStudy::reset()
 		for (int j = 0; j < gridRes + 1; ++j)
 			for (int k = 0; k < gridRes + 1; ++k)
 				m_vec3GridPoints.push_back(glm::vec3(m_mat4Screen * glm::vec4(i/(gridRes/2.f) - 1.f, j/(gridRes/2.f) - 1.f, k/(gridRes/2.f) - 1.f, 1.f)));
+
+	m_strCondition = std::string();
 }
 
 void MagnitudeStudy::update()
@@ -169,8 +171,7 @@ void MagnitudeStudy::update()
 
 			if (m_tStimulusStart != std::chrono::high_resolution_clock::time_point())
 			{
-				writeToLog();
-				next();
+				endTrial();
 			}
 		}
 	}
@@ -341,7 +342,7 @@ void MagnitudeStudy::draw()
 	}
 }
 
-void MagnitudeStudy::begin()
+void MagnitudeStudy::beginStudy()
 {
 	generateTrials();
 
@@ -353,38 +354,71 @@ void MagnitudeStudy::begin()
 	m_bPaused = true;
 }
 
-void MagnitudeStudy::generateTrials(bool randomOrder)
+unsigned int MagnitudeStudy::generateTrials(bool randomOrder)
 {
+	m_vExperimentConditions.clear();
+
 	for (auto a : { 0.f , 15.f, 30.f })						// view angles
 		for (auto d : { 1.f })								// view distance factors
 			for (auto s : { 0.f, m_fEyeSep })				// eye separations (for mono/stereo)
 				for (auto r : { 0.f, 45.f, 90.f, 135.f })	// rod angles
 					for (auto l : { 10.f, 20.f })			// rod lengths
 						for (auto f : { true, false })		// fishtank mode
-							m_vExperimentConditions.push_back(StudyCondition({ a, d, s, r, l, f }));
-					
+							m_vExperimentConditions.push_back(StudyCondition({ a, d, s, r, l, f }));					
 
 	m_nTrials = m_vExperimentConditions.size();
 
 	if (randomOrder)
 		std::shuffle(m_vExperimentConditions.begin(), m_vExperimentConditions.end(), m_Generator);
+
+	return static_cast<unsigned int>(m_nTrials);
 }
 
-void MagnitudeStudy::next()
+unsigned int MagnitudeStudy::trialsRemaining()
 {
-	m_bWaitingForResponse = false;
+	return static_cast<unsigned int>(m_vExperimentConditions.size());
+}
+
+void MagnitudeStudy::loadNextCondition()
+{
+	if (m_vExperimentConditions.size() == 0)
+		return;
+
+	loadCondition(m_vExperimentConditions.back());
+
+	std::stringstream ss;
+
+	ss << ((m_vExperimentConditions.back().eyeSeparation > 0.f) ? "stereo" : "mono");
+	ss << "_";
+	ss << (m_vExperimentConditions.back().fishtank ? "coupled" : "uncoupled");
+	ss << "_";
+	ss << "va" << std::fixed << std::setprecision(0) << m_vExperimentConditions.back().viewAngle;
+	ss << "_";
+	ss << "ra" << std::fixed << std::setprecision(0) << m_vExperimentConditions.back().angle;
+	ss << "_";
+	ss << "rl" << std::fixed << std::setprecision(0) << m_vExperimentConditions.back().len;
+
+	m_strCondition = ss.str();
 
 	m_vExperimentConditions.pop_back();
+}
+
+void MagnitudeStudy::endTrial()
+{
+	writeToLog();
 
 	moveScreen(0);
 
+	m_bWaitingForResponse = false;
 	m_bPaused = true;
 
+	m_vExperimentConditions.pop_back();
+
 	if (m_vExperimentConditions.size() == 0)
-		end();
+		endStudy();
 }
 
-void MagnitudeStudy::end()
+void MagnitudeStudy::endStudy()
 {
 	moveScreen(0);
 	m_bStudyMode = false;
@@ -406,19 +440,7 @@ float MagnitudeStudy::getEyeSep()
 
 std::string MagnitudeStudy::conditionString()
 {
-	std::stringstream ss;
-
-	ss << ((m_fEyeSep > 0.f) ? "stereo" : "mono");
-	ss << "_";
-	ss << (m_bFishtank ? "coupled" : "uncoupled");
-	ss << "_";
-	ss << "va" << std::fixed << std::setprecision(0) << m_fViewAngle;
-	ss << "_";
-	ss << "ra" << std::fixed << std::setprecision(0) << m_Vector.angle;
-	ss << "_";
-	ss << "rl" << std::fixed << std::setprecision(0) << m_Vector.length;
-
-	return ss.str();
+	return m_strCondition;
 }
 
 void MagnitudeStudy::writeToLog()
@@ -652,7 +674,7 @@ void MagnitudeStudy::receive(void * data)
 				if (eventData[1] == GLFW_KEY_HOME)
 				{
 					m_bStudyMode = true;
-					begin();
+					beginStudy();
 				}
 			}
 

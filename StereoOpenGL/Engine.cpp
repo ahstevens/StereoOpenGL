@@ -96,6 +96,7 @@ Engine::Engine(int argc, char *argv[], int mode)
 	, m_pAngleStudy(NULL)
 	, m_pMagStudy(NULL)
 	, m_bShowDiagnostics(false)
+	, m_bConditionScreenshotsInProgress(false)
 {
 };
 
@@ -288,8 +289,8 @@ void Engine::receive(void * data)
 
 		if (eventData[1] == GLFW_KEY_PRINT_SCREEN && !m_pMagStudy->isStudyActive())
 		{
-			Renderer::getInstance().snapshotFrameBufferToTGA(m_pLeftEyeFramebuffer->m_nResolveFramebufferId, glm::ivec4(0, 0, m_sviLeftEyeInfo.m_nRenderWidth, m_sviLeftEyeInfo.m_nRenderHeight), "lefteye_" + m_pMagStudy->conditionString(), false);
-			Renderer::getInstance().snapshotFrameBufferToTGA(m_pRightEyeFramebuffer->m_nResolveFramebufferId, glm::ivec4(0, 0, m_sviRightEyeInfo.m_nRenderWidth, m_sviRightEyeInfo.m_nRenderHeight), "righteye_" + m_pMagStudy->conditionString(), false);
+			m_bConditionScreenshotsInProgress = true;
+			m_pMagStudy->generateTrials(false);
 		}
 
 	}
@@ -332,6 +333,21 @@ void Engine::RunMainLoop()
 		a = clock::now();
 		render();
 		m_msRenderTime = clock::now() - a;
+
+		if (m_bConditionScreenshotsInProgress)
+		{
+			std::string cond = m_pMagStudy->conditionString();
+
+			if (cond.find("stereo") != cond.npos)
+			{
+				Renderer::getInstance().snapshotFrameBufferToTGA(m_pLeftEyeFramebuffer->m_nResolveFramebufferId, glm::ivec4(0, 0, m_sviLeftEyeInfo.m_nRenderWidth, m_sviLeftEyeInfo.m_nRenderHeight), "lefteye_" + m_pMagStudy->conditionString(), false, true);
+				Renderer::getInstance().snapshotFrameBufferToTGA(m_pRightEyeFramebuffer->m_nResolveFramebufferId, glm::ivec4(0, 0, m_sviRightEyeInfo.m_nRenderWidth, m_sviRightEyeInfo.m_nRenderHeight), "righteye_" + m_pMagStudy->conditionString(), false, true);
+			}
+			else
+			{
+				Renderer::getInstance().snapshotFrameBufferToTGA(m_pLeftEyeFramebuffer->m_nResolveFramebufferId, glm::ivec4(0, 0, m_sviLeftEyeInfo.m_nRenderWidth, m_sviLeftEyeInfo.m_nRenderHeight), "cyclops_" + m_pMagStudy->conditionString(), false, true);
+			}
+		}
 	}
 }
 
@@ -343,6 +359,13 @@ void Engine::update()
 	float width_cm = m_ivec2MainWindowSize.x * sizer;
 	float height_cm = m_ivec2MainWindowSize.y * sizer;
 
+	if (m_bConditionScreenshotsInProgress && m_pMagStudy->trialsRemaining() > 0)
+	{		
+		m_pMagStudy->loadNextCondition();
+	}
+	else
+		m_bConditionScreenshotsInProgress = false;
+		
 	//m_pAngleStudy->update();
 	m_pMagStudy->update();
 

@@ -30,8 +30,11 @@ public:
 
 	void draw();
 
-	void begin();
-	void end();
+	unsigned int generateTrials(bool randomOrder = true);
+	unsigned int trialsRemaining();
+	void loadNextCondition();
+
+	void beginStudy();
 
 	glm::vec3 getCOP();
 	float getEyeSep();
@@ -133,12 +136,13 @@ private:
 
 	ViewingConditionsDiagram* m_pDiagram;
 
+	std::string m_strCondition;
+
 private:
-	void generateTrials(bool randomOrder = true);
-	void next();
+	void endTrial();
+	void endStudy();
 	void writeToLog();
 	void loadCondition(StudyCondition &c);
 	bool moveScreen(float viewAngle, bool forceMove = false);
 	void receive(void* data);
 };
-

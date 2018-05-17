@@ -147,7 +147,7 @@ public:
 
 	bool CreateFrameBuffer(int nWidth, int nHeight, FramebufferDesc &framebufferDesc);
 
-	bool snapshotFrameBufferToTGA(GLuint framebufferID, glm::ivec4 rect, std::string filename, bool append_timestamp = true);
+	bool snapshotFrameBufferToTGA(GLuint framebufferID, glm::ivec4 rect, std::string filename, bool append_timestamp = true, bool silent = false);
 
 	void addToStaticRenderQueue(RendererSubmission &rs);
 	void addToDynamicRenderQueue(RendererSubmission &rs);
