@@ -143,6 +143,8 @@ private:
 	void endStudy();
 	void writeToLog();
 	void loadCondition(StudyCondition &c);
+	void resetMeasuringRod();
+	float calculateExpectedResponse(StudyCondition &c);
 	bool moveScreen(float viewAngle, bool forceMove = false);
 	void receive(void* data);
 };

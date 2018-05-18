@@ -385,6 +385,7 @@ void MagnitudeStudy::loadNextCondition()
 		return;
 
 	loadCondition(m_vExperimentConditions.back());
+	m_MeasuringRod.length = m_Vector.length;
 
 	std::stringstream ss;
 
@@ -397,6 +398,8 @@ void MagnitudeStudy::loadNextCondition()
 	ss << "ra" << std::fixed << std::setprecision(0) << m_vExperimentConditions.back().angle;
 	ss << "_";
 	ss << "rl" << std::fixed << std::setprecision(0) << m_vExperimentConditions.back().len;
+
+	std::cout << "Expected: " << calculateExpectedResponse(m_vExperimentConditions.back()) << std::endl;
 
 	m_strCondition = ss.str();
 
@@ -473,8 +476,6 @@ void MagnitudeStudy::loadCondition(StudyCondition &c)
 	m_Vector.angle = c.angle;
 	m_Vector.length = c.len;
 
-	m_MeasuringRod.length = 1.f;
-
 	m_fCOPDist = m_fViewDist * c.viewDistFactor;
 
 	m_bFishtank = c.fishtank;
@@ -489,6 +490,47 @@ void MagnitudeStudy::loadCondition(StudyCondition &c)
 	m_tStimulusStart += std::chrono::milliseconds(static_cast<int>(m_fStimulusDelay * 1000.f));
 
 	m_bBlockInput = false;
+}
+
+void MagnitudeStudy::resetMeasuringRod()
+{
+	m_MeasuringRod.length = 1.f;
+}
+
+float MagnitudeStudy::calculateExpectedResponse(StudyCondition &c)
+{
+	glm::mat4 screenBasisOrtho = glm::mat4(
+		glm::normalize(m_mat4Screen[0]),
+		glm::normalize(m_mat4Screen[1]),
+		glm::normalize(m_mat4Screen[2]),
+		m_mat4Screen[3]
+	);
+
+	float COPDist = m_fViewDist * c.viewDistFactor;
+
+	glm::mat4 copBasis = glm::rotate(glm::mat4(), glm::radians(m_fCOPAngle), glm::vec3(screenBasisOrtho[2])) * glm::translate(screenBasisOrtho, glm::vec3(0.f, -COPDist, 0.f));
+	glm::vec3 copPos(copBasis[3]);
+	float COPAngleOffset = glm::degrees(glm::asin(c.eyeSeparation / (2.f * COPDist)));
+	glm::vec3 copLeft = (glm::rotate(glm::mat4(), glm::radians(m_fCOPAngle - COPAngleOffset), glm::vec3(screenBasisOrtho[2])) * glm::translate(screenBasisOrtho, glm::vec3(0.f, -COPDist, 0.f)))[3];
+	glm::vec3 copRight = (glm::rotate(glm::mat4(), glm::radians(m_fCOPAngle + COPAngleOffset), glm::vec3(screenBasisOrtho[2])) * glm::translate(screenBasisOrtho, glm::vec3(0.f, -COPDist, 0.f)))[3];
+
+	glm::mat4 viewBasis = glm::rotate(glm::mat4(), glm::radians(c.viewAngle), glm::vec3(screenBasisOrtho[2])) * glm::translate(screenBasisOrtho, glm::vec3(0.f, -m_fViewDist, 0.f));
+	glm::vec3 viewPos(viewBasis[3]);
+	float viewAngleOffset = glm::degrees(glm::asin(c.eyeSeparation / (2.f * m_fViewDist)));
+	glm::vec3 leftEyePos = (glm::rotate(glm::mat4(), glm::radians(c.viewAngle - viewAngleOffset), glm::vec3(screenBasisOrtho[2])) * glm::translate(screenBasisOrtho, glm::vec3(0.f, -m_fViewDist, 0.f)))[3];
+	glm::vec3 rightEyePos = (glm::rotate(glm::mat4(), glm::radians(c.viewAngle + viewAngleOffset), glm::vec3(screenBasisOrtho[2])) * glm::translate(screenBasisOrtho, glm::vec3(0.f, -m_fViewDist, 0.f)))[3];
+
+	glm::vec3 screenOrigin = glm::vec3(m_mat4Screen[3]);
+	glm::vec3 screenViewVec = screenOrigin - viewPos;
+
+	std::vector<glm::vec3> pts, ptsxformed;
+
+	for (auto pt : { glm::vec3(0.f, 0.f, -0.5f), glm::vec3(0.f, 0.f, 0.5f) })
+		pts.push_back(glm::vec3(glm::translate(glm::mat4(), m_Vector.pos) * glm::rotate(glm::mat4(), glm::radians(c.angle), m_Vector.rotAxis) * glm::rotate(glm::mat4(), glm::radians(90.f), glm::vec3(0.f, 1.f, 0.f)) * glm::scale(glm::mat4(), glm::vec3(1.f, 1.f, c.len)) * glm::vec4(pt, 1.f)));
+	
+	ptsxformed = distutil::transformStereoscopicPoints(c.fishtank ? leftEyePos : copLeft, c.fishtank ? rightEyePos : copRight, leftEyePos, rightEyePos, glm::vec3(screenBasisOrtho[3]), glm::vec3(screenBasisOrtho[2]), pts);
+
+	return glm::distance(ptsxformed[0], ptsxformed[1]);
 }
 
 bool MagnitudeStudy::moveScreen(float viewAngle, bool forceMove)
@@ -527,6 +569,7 @@ void MagnitudeStudy::receive(void * data)
 			{
 				m_bPaused = false;
 				loadCondition(m_vExperimentConditions.back());
+				resetMeasuringRod();
 			}
 		}
 		else

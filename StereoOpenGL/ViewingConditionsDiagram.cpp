@@ -58,8 +58,6 @@ void ViewingConditionsDiagram::draw()
 
 	glm::vec3 screenViewVec = screenOrigin - viewPos;
 
-	glm::vec3 screenViewVecPerp = glm::cross(glm::vec3(m_mat4ScreenBasisOrtho[2]), glm::normalize(screenViewVec));
-
 	float viewAngleOffset = glm::degrees(glm::asin(m_fEyeSeparation / (2.f * m_fViewingDistance)));
 
 	glm::vec3 leftEyePos = (glm::rotate(glm::mat4(), glm::radians(m_fViewingAngle - viewAngleOffset), glm::vec3(m_mat4ScreenBasisOrtho[2])) * glm::translate(m_mat4ScreenBasisOrtho, glm::vec3(0.f, -m_fViewingDistance, 0.f)))[3];
