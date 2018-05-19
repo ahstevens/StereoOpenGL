@@ -8,6 +8,7 @@
 
 #include <string>
 #include <sstream>
+#include <experimental/filesystem>
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
@@ -423,6 +424,13 @@ bool Renderer::snapshotFrameBufferToTGA(GLuint framebufferID, glm::ivec4 rect, s
 	}
 
 	filename = "snapshots\\" + filename + ".tga";
+	
+	// make save dir if not present
+	if (!std::experimental::filesystem::is_directory("snapshots") || 
+		!std::experimental::filesystem::exists("snapshots"))
+	{
+		std::experimental::filesystem::create_directory("snapshots");
+	}
 
 	//Now the file creation
 	FILE *filePtr = fopen(std::string(filename).c_str(), "wb");
@@ -439,8 +447,8 @@ bool Renderer::snapshotFrameBufferToTGA(GLuint framebufferID, glm::ivec4 rect, s
 		}
 		else
 		{
-			printf("%s\n", err1);
-			printf("%s\n", err2);
+			printf("%s\n", err1.c_str());
+			printf("%s\n", err2.c_str());
 		}
 		return false;
 	}
@@ -464,7 +472,7 @@ bool Renderer::snapshotFrameBufferToTGA(GLuint framebufferID, glm::ivec4 rect, s
 	if (!silent)
 		showMessage("Snapshot saved to " + filename);
 	else
-		printf("Snapshot saved to %s\n", filename);
+		printf("Snapshot saved to %s\n", filename.c_str());
 
 	return true;
 }

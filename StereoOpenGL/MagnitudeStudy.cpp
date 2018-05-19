@@ -508,20 +508,19 @@ float MagnitudeStudy::calculateExpectedResponse(StudyCondition &c)
 
 	float COPDist = m_fViewDist * c.viewDistFactor;
 
-	glm::mat4 copBasis = glm::rotate(glm::mat4(), glm::radians(m_fCOPAngle), glm::vec3(screenBasisOrtho[2])) * glm::translate(screenBasisOrtho, glm::vec3(0.f, -COPDist, 0.f));
+	glm::mat4 copBasis = glm::rotate(glm::mat4(), glm::radians(m_fCOPAngle), glm::vec3(screenBasisOrtho[1])) * glm::translate(screenBasisOrtho, glm::vec3(0.f, 0.f, COPDist));
 	glm::vec3 copPos(copBasis[3]);
 	float COPAngleOffset = glm::degrees(glm::asin(c.eyeSeparation / (2.f * COPDist)));
-	glm::vec3 copLeft = (glm::rotate(glm::mat4(), glm::radians(m_fCOPAngle - COPAngleOffset), glm::vec3(screenBasisOrtho[2])) * glm::translate(screenBasisOrtho, glm::vec3(0.f, -COPDist, 0.f)))[3];
-	glm::vec3 copRight = (glm::rotate(glm::mat4(), glm::radians(m_fCOPAngle + COPAngleOffset), glm::vec3(screenBasisOrtho[2])) * glm::translate(screenBasisOrtho, glm::vec3(0.f, -COPDist, 0.f)))[3];
+	glm::vec3 copLeft = (glm::rotate(glm::mat4(), glm::radians(m_fCOPAngle - COPAngleOffset), glm::vec3(screenBasisOrtho[1])) * glm::translate(screenBasisOrtho, glm::vec3(0.f, 0.f, COPDist)))[3];
+	glm::vec3 copRight = (glm::rotate(glm::mat4(), glm::radians(m_fCOPAngle + COPAngleOffset), glm::vec3(screenBasisOrtho[1])) * glm::translate(screenBasisOrtho, glm::vec3(0.f, 0.f, COPDist)))[3];
 
-	glm::mat4 viewBasis = glm::rotate(glm::mat4(), glm::radians(c.viewAngle), glm::vec3(screenBasisOrtho[2])) * glm::translate(screenBasisOrtho, glm::vec3(0.f, -m_fViewDist, 0.f));
+	glm::mat4 viewBasis = glm::rotate(glm::mat4(), glm::radians(c.viewAngle), glm::vec3(screenBasisOrtho[1])) * glm::translate(screenBasisOrtho, glm::vec3(0.f, 0.f, m_fViewDist));
 	glm::vec3 viewPos(viewBasis[3]);
 	float viewAngleOffset = glm::degrees(glm::asin(c.eyeSeparation / (2.f * m_fViewDist)));
-	glm::vec3 leftEyePos = (glm::rotate(glm::mat4(), glm::radians(c.viewAngle - viewAngleOffset), glm::vec3(screenBasisOrtho[2])) * glm::translate(screenBasisOrtho, glm::vec3(0.f, -m_fViewDist, 0.f)))[3];
-	glm::vec3 rightEyePos = (glm::rotate(glm::mat4(), glm::radians(c.viewAngle + viewAngleOffset), glm::vec3(screenBasisOrtho[2])) * glm::translate(screenBasisOrtho, glm::vec3(0.f, -m_fViewDist, 0.f)))[3];
+	glm::vec3 leftEyePos = (glm::rotate(glm::mat4(), glm::radians(c.viewAngle - viewAngleOffset), glm::vec3(screenBasisOrtho[1])) * glm::translate(screenBasisOrtho, glm::vec3(0.f, 0.f, m_fViewDist)))[3];
+	glm::vec3 rightEyePos = (glm::rotate(glm::mat4(), glm::radians(c.viewAngle + viewAngleOffset), glm::vec3(screenBasisOrtho[1])) * glm::translate(screenBasisOrtho, glm::vec3(0.f, 0.f, m_fViewDist)))[3];
 
 	glm::vec3 screenOrigin = glm::vec3(m_mat4Screen[3]);
-	glm::vec3 screenViewVec = screenOrigin - viewPos;
 
 	std::vector<glm::vec3> pts, ptsxformed;
 
