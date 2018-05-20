@@ -348,7 +348,7 @@ void MagnitudeStudy::beginStudy()
 
 	DataLogger::getInstance().setID(m_strName);
 	DataLogger::getInstance().openLog(m_strName);
-	DataLogger::getInstance().setHeader("trial,ipd,view.dist,view.angle,view.dist.factor,fishtank,rod.angle,rod.length,response");
+	DataLogger::getInstance().setHeader("trial,ipd,view.dist,view.dist.factor,view.angle,fishtank,rod.angle,rod.length,response,expected");
 	DataLogger::getInstance().start();
 
 	m_bPaused = true;
@@ -446,9 +446,39 @@ std::string MagnitudeStudy::conditionString()
 	return m_strCondition;
 }
 
+void MagnitudeStudy::outputTable()
+{
+	std::ofstream ss;
+	ss.open(std::string("table.csv"));
+
+	ss << "ipd,view.angle,fishtank,rod.angle,rod.length,expected" << std::endl;
+
+	for (auto a : { 0.f , 15.f, 30.f })						// view angles
+		for (auto d : { 1.f })								// view distance factors
+			for (float s = 5.5f; s <= 7.5f; s+= 0.1f)		// eye separations
+				for (auto r : { 0.f, 45.f, 90.f, 135.f })	// rod angles
+					for (auto l : { 10.f, 20.f })			// rod lengths
+						for (auto f : { false })		// fishtank mode
+						{
+							StudyCondition c = { a, d, s, r, l, f };
+							ss << std::fixed << std::setprecision(1) << c.eyeSeparation;
+							ss << ",";
+							ss << std::fixed << std::setprecision(0) << c.viewAngle;
+							ss << ",";
+							ss << c.fishtank;
+							ss << ",";
+							ss << std::fixed << std::setprecision(0) << c.angle;
+							ss << ",";
+							ss << std::fixed << std::setprecision(0) << c.len;
+							ss << ",";
+							ss << std::fixed << std::setprecision(2) << calculateExpectedResponse(c);
+							ss << std::endl;
+						}
+	ss.close();
+}
+
 void MagnitudeStudy::writeToLog()
 {
-	DataLogger::getInstance().setHeader("trial,ipd,view.dist,view.dist.factor,view.angle,fishtank,rod.angle,rod.length,response");
 	std::string logEntry;
 	logEntry += std::to_string(m_nTrials - m_vExperimentConditions.size());
 	logEntry += ",";
@@ -467,6 +497,8 @@ void MagnitudeStudy::writeToLog()
 	logEntry += std::to_string(m_vExperimentConditions.back().len);
 	logEntry += ",";
 	logEntry += std::to_string(m_MeasuringRod.length);
+	logEntry += ",";
+	logEntry += std::to_string(calculateExpectedResponse(m_vExperimentConditions.back()));
 
 	DataLogger::getInstance().logMessage(logEntry);
 }
@@ -573,8 +605,8 @@ void MagnitudeStudy::receive(void * data)
 		}
 		else
 		{
-			if (eventData[1] == GLFW_KEY_BACKSPACE && m_pEditParam->buf.length() > 0)
-				m_pEditParam->buf.pop_back();
+			if (eventData[1] == GLFW_KEY_D)
+				m_bShowDiagram = !m_bShowDiagram;
 
 
 			if (m_pEditParam)
@@ -744,6 +776,11 @@ void MagnitudeStudy::receive(void * data)
 			if (eventData[1] == GLFW_KEY_F10)
 			{
 				m_bShowDiagram = !m_bShowDiagram;
+			}
+
+			if (eventData[1] == GLFW_KEY_T)
+			{
+				outputTable();
 			}
 
 			if (eventData[1] == GLFW_KEY_I)

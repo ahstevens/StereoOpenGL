@@ -41,6 +41,8 @@ public:
 
 	std::string conditionString();
 
+	void outputTable();
+
 	bool isStudyActive() { return m_bStudyMode; }
 
 private:
