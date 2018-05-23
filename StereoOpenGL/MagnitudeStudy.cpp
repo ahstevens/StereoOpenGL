@@ -358,7 +358,7 @@ unsigned int MagnitudeStudy::generateTrials(bool randomOrder)
 {
 	m_vExperimentConditions.clear();
 
-	for (auto a : { 0.f , 15.f, 30.f })						// view angles
+	for (auto a : { 0.f, 15.f, 30.f })						// view angles
 		for (auto d : { 1.f })								// view distance factors
 			for (auto s : { 0.f, m_fEyeSep })				// eye separations (for mono/stereo)
 				for (auto r : { 0.f, 45.f, 90.f, 135.f })	// rod angles
