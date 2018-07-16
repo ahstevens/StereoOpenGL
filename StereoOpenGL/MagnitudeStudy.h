@@ -96,6 +96,7 @@ private:
 
 	std::string m_strName;
 
+	bool m_bDemoMode;
 	bool m_bStudyMode;
 	bool m_bPaused;
 	bool m_bShowStimulus;
@@ -113,6 +114,8 @@ private:
 	float m_fViewAngle;
 
 	float m_fHingeSize;
+
+	unsigned int m_uiDemoRotCount;
 
 	std::default_random_engine m_Generator;
 	std::uniform_int_distribution<int> m_AngleDistribution;

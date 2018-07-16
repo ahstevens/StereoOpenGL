@@ -14,6 +14,7 @@ MagnitudeStudy::MagnitudeStudy()
 	, m_fHingeSize(10.f)
 	, m_pEditParam(NULL)
 	, m_pDiagram(NULL)
+	, m_bDemoMode(false)
 	, m_bStudyMode(false)
 	, m_bPaused(false)
 	, m_bShowStimulus(true)
@@ -62,6 +63,7 @@ void MagnitudeStudy::init(glm::ivec2 screenRes, glm::mat4 worldToScreenTransform
 
 void MagnitudeStudy::reset()
 {
+	m_bDemoMode = false;
 	m_bStudyMode = false;
 	m_bPaused = false;
 	m_bBlockInput = false;
@@ -76,6 +78,8 @@ void MagnitudeStudy::reset()
 	m_fViewAngle = 0.f;
 	m_fViewDist = 57.f;
 	m_fEyeSep = 6.7;
+
+	m_uiDemoRotCount = 0;
 
 	m_Vector.length = m_fHingeSize;
 	m_Vector.angle = 0.f;
@@ -173,6 +177,22 @@ void MagnitudeStudy::update()
 			{
 				endTrial();
 			}
+		}
+	}
+	else if (m_bDemoMode)
+	{
+		m_bShowStimulus = true;
+
+		if (elapsedMove > m_fMoveTime)
+		{
+			if (m_uiDemoRotCount % 2 == 0)
+				m_bFishtank = !m_bFishtank;
+
+			if (m_uiDemoRotCount % 4 == 0)
+				m_Vector.angle = std::fmod(m_Vector.angle + 45.f, 360.f);
+
+			moveScreen(-m_fTargetAngle);
+			m_uiDemoRotCount++;
 		}
 	}
 	else
@@ -312,8 +332,24 @@ void MagnitudeStudy::draw()
 		}
 	}
 
-	if (m_bWaitingForResponse)
+	if (m_bDemoMode)
 	{
+		std::stringstream ss;
+
+		ss << (m_bFishtank ? "Head-Tracked Stereo Mode (Fishtank VR)" : "Untracked Stereo Mode") << std::endl;
+		ss << "Virtual Viewing Angle: " << std::fixed << std::setprecision(0) << (m_bFishtank ? m_fViewAngle : m_fCOPAngle) << std::endl;
+		ss << "Target Rod Angle: " << std::fixed << std::setprecision(0) << m_Vector.angle << std::endl;
+
+		Renderer::getInstance().drawUIText(
+			ss.str(),
+			glm::vec4(1.f, 1.f, 0.f, 1.f),
+			glm::vec3(m_ivec2Screen.x / 2, 0.f, 0.f),
+			glm::quat(),
+			m_ivec2Screen.x / 10.f,
+			Renderer::HEIGHT,
+			Renderer::CENTER,
+			Renderer::CENTER_BOTTOM
+		);
 	}
 
 	if (m_bDisplayCondition && !m_bStudyMode)
@@ -748,7 +784,15 @@ void MagnitudeStudy::receive(void * data)
 				if (eventData[1] == GLFW_KEY_HOME)
 				{
 					m_bStudyMode = true;
+					m_bDemoMode = false;
 					beginStudy();
+				}
+
+				if (eventData[1] == GLFW_KEY_KP_ENTER)
+				{
+					m_bDemoMode = true;
+					m_fMoveTime = 10.f;
+					moveScreen(30.f);
 				}
 			}
 
